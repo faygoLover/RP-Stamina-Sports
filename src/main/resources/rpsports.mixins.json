@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "faygolover.rpsports.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "rpsports.refmap.json",
+  "mixins": [],
+  "client": ["CameraMixin", "KeyboardHandlerMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

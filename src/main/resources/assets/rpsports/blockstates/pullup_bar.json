@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "rpsports:block/pullup_bar"
+    },
+    "facing=east": {
+      "model": "rpsports:block/pullup_bar",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "rpsports:block/pullup_bar",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "rpsports:block/pullup_bar",
+      "y": 270
+    }
+  }
+}

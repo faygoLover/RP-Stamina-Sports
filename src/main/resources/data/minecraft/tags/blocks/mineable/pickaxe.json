@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "rpsports:bench",
+    "rpsports:pullup_bar",
+    "rpsports:treadmill"
+  ]
+}

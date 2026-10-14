@@ -1,0 +1,396 @@
+package faygolover.rpsports.server;
+
+import faygolover.rpcore.api.BodyProvider;
+import faygolover.rpcore.api.NutritionProvider;
+import faygolover.rpcore.api.RpCoreAPI;
+import faygolover.rpcore.api.RpIds;
+import faygolover.rpcore.api.StaminaProvider;
+import faygolover.rpsports.RpSports;
+import faygolover.rpsports.SportsConfig;
+import faygolover.rpsports.block.BenchBlock;
+import faygolover.rpsports.block.BenchBlockEntity;
+import faygolover.rpsports.capability.SportsData;
+import faygolover.rpsports.core.Exercise;
+import faygolover.rpsports.core.Zone;
+import faygolover.rpsports.entity.SeatEntity;
+import faygolover.rpsports.network.SportsNet;
+import faygolover.rpsports.registry.SportsRegistry;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Тренировки на сервере (RP Stamina Sports docs/00):
+ * <ul>
+ *   <li>начать — ПКМ по тренажёру, ПКМ гантелью, клавиша «Упражнения»; закончить — Ctrl, отойти, слезть;</li>
+ *   <li>повтор: выносливость (RP Stamina), усталость зон, опыт Силы и Телосложения за каждый повтор (RP Core → Perks);</li>
+ *   <li>силы зон: скрытая «Усталость» ниже 30 %, «Боль в мышцах» ниже 10 % (держатся до полного восстановления),
+ *       перегрузка «сверх нуля» — растяжение и надрыв (RP Medicine);</li>
+ *   <li>кончилась выносливость — плохое событие ({@link BadEvents}).</li>
+ * </ul>
+ */
+public final class SportsService {
+    private SportsService() {}
+
+    static final Map<UUID, Session> SESSIONS = new HashMap<>();
+    /** Выбранная программа дорожки (Shift+ПКМ по дорожке). */
+    private static final Map<UUID, Integer> PROGRAMS = new HashMap<>();
+
+    public static ResourceLocation source(Exercise e) {
+        return new ResourceLocation(RpSports.MODID, e.id);
+    }
+
+    // ------------------------------------------------------------------ уровни и вес
+
+    static int level(ServerPlayer sp, ResourceLocation skill) {
+        return RpCoreAPI.skill(sp, skill).orElse(3);
+    }
+
+    static double bodyKg(ServerPlayer sp) {
+        double w = RpCoreAPI.weightKg(sp);
+        return Double.isFinite(w) && w > 20 ? w : 75;
+    }
+
+    /** «Свой» вес штанги или гантели по Силе. */
+    static double ownWeight(Exercise e, int strength) {
+        if (e == Exercise.BENCH) return SportsConfig.get(SportsConfig.BAR_BASE) + SportsConfig.get(SportsConfig.BAR_PER_STRENGTH) * strength;
+        if (e == Exercise.DUMBBELL) return SportsConfig.get(SportsConfig.DUMBBELL_BASE) + SportsConfig.get(SportsConfig.DUMBBELL_PER_STRENGTH) * strength;
+        return 1;
+    }
+
+    /** Польза от отношения веса (docs/00, «Вес снаряда»). */
+    static double weightEfficiency(double ratio) {
+        if (ratio < 0.5) return 0.2;
+        if (ratio < 0.9) return 0.4 + (ratio - 0.5) / 0.4 * 0.5;
+        if (ratio <= 1.4) return 1.0;
+        return 0.6;
+    }
+
+    // ------------------------------------------------------------------ начало
+
+    public static boolean benchBusy(Level level, BlockPos pos) {
+        for (Session s : SESSIONS.values()) if (s.exercise == Exercise.BENCH && pos.equals(s.pos)) return true;
+        return false;
+    }
+
+    public static void useMachine(ServerPlayer sp, BlockPos pos, BlockState state, Exercise e, boolean shift) {
+        if (SESSIONS.containsKey(sp.getUUID())) return;
+        if (e == Exercise.TREADMILL && shift) {
+            int p = (PROGRAMS.getOrDefault(sp.getUUID(), 1) + 1) % 3;
+            PROGRAMS.put(sp.getUUID(), p);
+            sp.displayClientMessage(Component.translatable("rpsports.msg.program", Component.translatable("rpsports.program." + p)), true);
+            return;
+        }
+        if (e == Exercise.BENCH) {
+            for (var en : SESSIONS.entrySet()) {
+                Session s = en.getValue();
+                if (s.exercise == Exercise.BENCH && pos.equals(s.pos)) {
+                    // Скамья занята — встать на страховку.
+                    s.spotter = sp.getUUID();
+                    sp.displayClientMessage(Component.translatable("rpsports.msg.spotting").withStyle(ChatFormatting.GREEN), true);
+                    ServerPlayer lifter = sp.server.getPlayerList().getPlayer(en.getKey());
+                    if (lifter != null) lifter.displayClientMessage(Component.translatable("rpsports.msg.spotted", sp.getDisplayName()), true);
+                    return;
+                }
+            }
+        }
+        double kg = e == Exercise.BENCH ? BenchBlock.weightAt(sp.level(), pos) : 0;
+        start(sp, e, pos, InteractionHand.MAIN_HAND, kg, PROGRAMS.getOrDefault(sp.getUUID(), 1));
+    }
+
+    public static void useDumbbell(ServerPlayer sp, InteractionHand hand, int kg) {
+        if (SESSIONS.containsKey(sp.getUUID())) return;
+        start(sp, Exercise.DUMBBELL, null, hand, kg, 0);
+    }
+
+    public static void startBodyweight(ServerPlayer sp, Exercise e) {
+        if (e.kind != Exercise.Kind.BODYWEIGHT || SESSIONS.containsKey(sp.getUUID())) return;
+        if (!sp.onGround() || sp.isPassenger() || sp.isInWater()) {
+            sp.displayClientMessage(Component.translatable("rpsports.msg.need_ground").withStyle(ChatFormatting.GRAY), true);
+            return;
+        }
+        start(sp, e, null, InteractionHand.MAIN_HAND, 0, 0);
+    }
+
+    /** Зоны упражнения (с рабочей рукой гантели). */
+    static Map<Zone, Double> zones(Session s) {
+        Map<Zone, Double> m = new java.util.EnumMap<>(s.exercise.fatigue);
+        if (s.exercise == Exercise.DUMBBELL) m.put(s.hand == InteractionHand.MAIN_HAND ? Zone.RIGHT_ARM : Zone.LEFT_ARM, 0.2);
+        return m;
+    }
+
+    private static void start(ServerPlayer sp, Exercise e, @Nullable BlockPos pos, InteractionHand hand, double kg, int program) {
+        if (sp.isSpectator()) return;
+        // С модом тела: перелом, сильная боль, нет руки — нельзя.
+        BodyProvider body = RpCoreAPI.body();
+        Map<Zone, Double> worked = e == Exercise.DUMBBELL
+                ? Map.of(hand == InteractionHand.MAIN_HAND ? Zone.RIGHT_ARM : Zone.LEFT_ARM, 0.2) : e.fatigue;
+        if (body != null) {
+            for (Zone z : worked.keySet()) {
+                for (ResourceLocation part : z.parts) {
+                    if (!body.canExert(sp, part)) {
+                        sp.displayClientMessage(Component.translatable("rpsports.msg.cannot_exert", Component.translatable(z.key()))
+                                .withStyle(ChatFormatting.RED), true);
+                        return;
+                    }
+                }
+            }
+        }
+        SportsData d = SportsData.get(sp);
+        if (d == null) return;
+        // Без мода тела «Боль в мышцах» запрещает нагружать зону, пока не отдохнёт.
+        if (body == null || !body.handles(RpIds.BODY_MUSCLES)) {
+            for (Zone z : worked.keySet()) {
+                if (d.pain[z.ordinal()] && d.strength[z.ordinal()] <= 0) {
+                    sp.displayClientMessage(Component.translatable("rpsports.msg.muscle_fail", Component.translatable(z.key()))
+                            .withStyle(ChatFormatting.RED), true);
+                    return;
+                }
+            }
+        }
+        int str = level(sp, RpIds.STRENGTH), fit = level(sp, RpIds.FITNESS);
+        double ratio = 1;
+        if (e.weighted()) ratio = kg / Math.max(1, ownWeight(e, str));
+        else if (e.bodyweight()) ratio = bodyKg(sp) / 75.0;
+        int clothing = 0, heavy = 0;
+        var list = SportsConfig.get(SportsConfig.CLOTHING);
+        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            ItemStack st = sp.getItemBySlot(slot);
+            if (st.isEmpty()) continue;
+            var id = ForgeRegistries.ITEMS.getKey(st.getItem());
+            if (id != null && list.contains(id.toString())) clothing++;
+            else heavy++;
+        }
+        double ease = 1;
+        if (RpCoreAPI.hasTrait(sp, RpIds.AGILE)) ease *= 1.1;
+        if (RpCoreAPI.hasTrait(sp, RpIds.CLUMSY)) ease *= 0.9;
+        ease *= Math.max(0.4, 1 - heavy * SportsConfig.get(SportsConfig.ARMOR_DIFFICULTY));
+        boolean onMat = e.kind == Exercise.Kind.BODYWEIGHT && (sp.level().getBlockState(sp.blockPosition()).is(SportsRegistry.GYM_MAT.get())
+                || sp.level().getBlockState(sp.blockPosition().below()).is(SportsRegistry.GYM_MAT.get()));
+        Session s = new Session(e, pos, hand, kg, ratio, str, fit, ease, program, onMat, clothing, heavy);
+        s.started = sp.level().getGameTime();
+        s.lastRep = s.started;
+        if (e == Exercise.BENCH && pos != null) {
+            SeatEntity seat = SeatEntity.create(sp.level(), pos.getX() + 0.5, pos.getY() + 0.25, pos.getZ() + 0.5);
+            sp.level().addFreshEntity(seat);
+            sp.startRiding(seat, true);
+            s.seatId = seat.getId();
+        }
+        SESSIONS.put(sp.getUUID(), s);
+        SportsNet.send(sp, new SportsNet.Open(e.ordinal(), (float) ratio, str, fit, (float) ease, (float) kg,
+                hand == InteractionHand.MAIN_HAND ? 0 : 1, program));
+        if (ratio > 1.4 && e.weighted())
+            sp.displayClientMessage(Component.translatable("rpsports.msg.too_heavy").withStyle(ChatFormatting.GOLD), true);
+        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), e.ordinal(), 0, 0));
+    }
+
+    // ------------------------------------------------------------------ повтор
+
+    public static void onRep(ServerPlayer sp, boolean success, int extra) {
+        Session s = SESSIONS.get(sp.getUUID());
+        SportsData d = SportsData.get(sp);
+        if (s == null || d == null || s.failed) return;
+        long now = sp.level().getGameTime();
+        double minTicks = s.exercise.repSeconds * 20 * (s.exercise == Exercise.TREADMILL ? 0.8 : 0.35);
+        if (now - s.lastRep < minTicks) return; // слишком часто — не считаем (макросы)
+        s.lastRep = now;
+        var cfg = SportsConfig.EXERCISES.get(s.exercise);
+        double armor = s.armorMult(SportsConfig.get(SportsConfig.ARMOR_PENALTY));
+        double load = s.exercise.weighted() || s.exercise.bodyweight() ? Math.max(0.3, s.ratio) : 1;
+
+        // Выносливость: повтор (дорожка — по темпу, каждую секунду в тике).
+        StaminaProvider stamina = RpCoreAPI.stamina();
+        double cost = cfg.stamina().get() * load * armor;
+        if (s.exercise == Exercise.BAG && RpCoreAPI.hasTrait(sp, RpIds.MELEE_FIGHTER)) cost *= 0.8;
+        if (stamina != null && cost > 0) stamina.spend(sp, (float) cost, source(s.exercise));
+
+        // Усталость зон.
+        Map<Zone, Double> zones = zones(s);
+        if (s.exercise == Exercise.BAG) zones.put(extra == 0 ? Zone.LEFT_ARM : Zone.RIGHT_ARM, 0.1);
+        double fat = cfg.fatigue().get() * SportsConfig.fitnessFatigue(s.fitness) * armor
+                * (s.exercise.weighted() ? Math.max(0.3, s.ratio) : 1) * (success ? 1 : SportsConfig.get(SportsConfig.ERROR_FATIGUE));
+        double zoneXp = 1;
+        for (var z : zones.entrySet()) {
+            int i = z.getKey().ordinal();
+            zoneXp = Math.min(zoneXp, d.pain[i] ? 0 : d.fatigued[i] ? SportsConfig.get(SportsConfig.FATIGUE_XP) : 1);
+            Muscles.fatigue(sp, d, z.getKey(), z.getValue() * fat, now);
+        }
+        if (!SESSIONS.containsKey(sp.getUUID())) return; // мышцы отказали — упражнение уже закончено
+
+        // Опыт за удачный повтор.
+        if (success) {
+            s.reps++;
+            double mult = zoneXp;
+            if (s.exercise.weighted()) mult *= weightEfficiency(s.ratio);
+            mult *= 1 + s.clothing * SportsConfig.get(SportsConfig.CLOTHING_XP);
+            if (s.onMat) mult *= 1 + SportsConfig.get(SportsConfig.MAT_XP);
+            if (RpCoreAPI.hasTrait(sp, RpIds.GYM_LOVER)) mult *= SportsConfig.get(SportsConfig.GYM_LOVER_XP);
+            if (s.exercise == Exercise.TREADMILL) mult *= switch (s.program) { case 0 -> 0.4; case 2 -> 1.2; default -> 1.0; };
+            if (mult > 0) {
+                RpCoreAPI.grantXp(sp, RpIds.STRENGTH, cfg.xpStrength().get() * mult);
+                RpCoreAPI.grantXp(sp, RpIds.FITNESS, cfg.xpFitness().get() * mult);
+                if (s.exercise.xpMelee > 0 && level(sp, RpIds.MELEE) < SportsConfig.get(SportsConfig.MELEE_XP_MAX_LEVEL))
+                    RpCoreAPI.grantXp(sp, RpIds.MELEE, s.exercise.xpMelee * mult);
+            }
+        } else {
+            s.errors++;
+        }
+        d.afterburnUntil = now + (long) (SportsConfig.get(SportsConfig.AFTERBURN_HOURS) * 72000);
+
+        // Выносливость кончилась — плохое событие.
+        afterLoad(sp, s, d, now);
+    }
+
+    /** После нагрузки: дрожь, плохое событие при нуле. */
+    static void afterLoad(ServerPlayer sp, Session s, SportsData d, long now) {
+        StaminaProvider stamina = RpCoreAPI.stamina();
+        double frac = stamina == null ? 1 : stamina.stamina(sp) / Math.max(1f, stamina.maxStamina(sp));
+        double badAt = RpCoreAPI.hasTrait(sp, RpIds.UNLUCKY) ? SportsConfig.get(SportsConfig.UNLUCKY_STAMINA) : 0.005;
+        if (stamina != null && (stamina.exhausted(sp) || frac <= badAt)) {
+            s.failed = true;
+            BadEvents.trigger(sp, s, d);
+            return;
+        }
+        boolean tremble = frac < SportsConfig.get(SportsConfig.TREMBLE_STAMINA);
+        for (Zone z : zones(s).keySet()) if (d.fatigued[z.ordinal()]) tremble = true;
+        SportsNet.send(sp, new SportsNet.Status(tremble, false, s.reps));
+    }
+
+    public static void onProgress(ServerPlayer sp, float a, float b) {
+        Session s = SESSIONS.get(sp.getUUID());
+        if (s == null) return;
+        s.a = Math.max(0, Math.min(2, a));
+        s.b = Math.max(-2, Math.min(2, b));
+        long now = sp.level().getGameTime();
+        if (now - s.lastRelay < 2) return;
+        s.lastRelay = now;
+        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), s.exercise.ordinal(), s.a, s.b));
+    }
+
+    // ------------------------------------------------------------------ конец
+
+    public static void stop(ServerPlayer sp, @Nullable String reason) {
+        Session s = SESSIONS.remove(sp.getUUID());
+        if (s == null) return;
+        if (s.seatId != null) {
+            Entity seat = sp.level().getEntity(s.seatId);
+            if (sp.getVehicle() == seat) sp.stopRiding();
+            if (seat != null) seat.discard();
+        }
+        SportsNet.send(sp, new SportsNet.Stopped(reason == null ? "" : reason));
+        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), -1, 0, 0));
+        if (reason != null && !reason.isEmpty())
+            sp.displayClientMessage(Component.translatable(reason).withStyle(ChatFormatting.GRAY), true);
+    }
+
+    @Nullable
+    static Session session(ServerPlayer sp) {
+        return SESSIONS.get(sp.getUUID());
+    }
+
+    // ------------------------------------------------------------------ тик раз в секунду
+
+    public static void secondTick(ServerPlayer sp) {
+        SportsData d = SportsData.get(sp);
+        if (d == null) return;
+        long now = sp.level().getGameTime();
+        Session s = SESSIONS.get(sp.getUUID());
+        if (s != null) sessionTick(sp, s, d, now);
+        Muscles.recover(sp, d, 1, sp.isSleeping(), now);
+        // Дожигание после тренировки.
+        NutritionProvider n = RpCoreAPI.nutrition();
+        if (n != null && now < d.afterburnUntil) n.burnKcal(sp, SportsConfig.get(SportsConfig.AFTERBURN_KCAL));
+    }
+
+    private static void sessionTick(ServerPlayer sp, Session s, SportsData d, long now) {
+        if (!sp.isAlive()) {
+            stop(sp, null);
+            return;
+        }
+        if (s.pos != null) {
+            double dist = sp.position().distanceToSqr(s.pos.getX() + 0.5, s.pos.getY(), s.pos.getZ() + 0.5);
+            boolean gone = !(sp.level().getBlockState(s.pos).getBlock() instanceof faygolover.rpsports.block.MachineBlock);
+            if (gone || dist > 2.6 * 2.6 + (s.exercise == Exercise.BAG ? 2 : 0)) {
+                stop(sp, "rpsports.msg.walked_away");
+                return;
+            }
+        }
+        if (s.seatId != null && sp.getVehicle() == null && !s.failed) {
+            stop(sp, null);
+            return;
+        }
+        if (s.exercise == Exercise.DUMBBELL && !(sp.getItemInHand(s.hand).getItem() instanceof faygolover.rpsports.item.DumbbellItem)) {
+            stop(sp, null);
+            return;
+        }
+        if (s.spotter != null) {
+            ServerPlayer sp2 = sp.server.getPlayerList().getPlayer(s.spotter);
+            if (sp2 == null || s.pos == null || sp2.position().distanceToSqr(s.pos.getX() + 0.5, s.pos.getY(), s.pos.getZ() + 0.5) > 9) {
+                s.spotter = null;
+                if (sp2 != null) sp2.displayClientMessage(Component.translatable("rpsports.msg.spot_left"), true);
+            }
+        }
+        if (s.exercise == Exercise.TREADMILL && !s.failed) {
+            // Темп с клиента (0–1): ходьба → бег → рывок.
+            double tempo = s.a;
+            double perSecond = tempo < 0.45 ? SportsConfig.get(SportsConfig.TREAD_WALK)
+                    : tempo < 0.8 ? SportsConfig.get(SportsConfig.TREAD_RUN) : SportsConfig.get(SportsConfig.TREAD_SPRINT);
+            StaminaProvider stamina = RpCoreAPI.stamina();
+            if (stamina != null && tempo > 0.05)
+                stamina.spend(sp, (float) (perSecond * s.armorMult(SportsConfig.get(SportsConfig.ARMOR_PENALTY))), source(Exercise.TREADMILL));
+            if (tempo > 0.05) afterLoad(sp, s, d, now);
+        }
+        if (BadEvents.tick(sp, s, d, now)) stop(sp, null);
+    }
+
+    /** Выход игрока, смена измерения, смерть — упражнение кончается. */
+    public static void forget(ServerPlayer sp) {
+        stop(sp, null);
+    }
+
+    /** Эффект «Боль в мышцах» без мода тела — видимый (значок). */
+    static void painEffect(ServerPlayer sp, boolean on) {
+        var eff = SportsRegistry.MUSCLE_PAIN.get();
+        if (on) {
+            MobEffectInstance cur = sp.getEffect(eff);
+            if (cur == null || cur.getDuration() < 100) sp.addEffect(new MobEffectInstance(eff, 400, 0, false, false, true));
+        } else if (sp.hasEffect(eff)) {
+            sp.removeEffect(eff);
+        }
+    }
+
+    /** Отладка и ГМ: снять усталость. */
+    public static void rest(ServerPlayer sp) {
+        SportsData d = SportsData.get(sp);
+        if (d == null) return;
+        java.util.Arrays.fill(d.strength, 100);
+        java.util.Arrays.fill(d.fatigued, false);
+        java.util.Arrays.fill(d.pain, false);
+        java.util.Arrays.fill(d.overload, 0);
+        java.util.Arrays.fill(d.strainSent, 0);
+        painEffect(sp, false);
+    }
+
+    static boolean benchHasSpotter(Session s, ServerPlayer sp) {
+        return s.spotter != null && sp.server.getPlayerList().getPlayer(s.spotter) != null;
+    }
+
+    static double benchKg(Level level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof BenchBlockEntity b ? b.totalKg() : BenchBlock.BAR_KG;
+    }
+}

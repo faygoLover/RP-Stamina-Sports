@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "rpsports:block/gym_mat"
+    },
+    "facing=east": {
+      "model": "rpsports:block/gym_mat",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "rpsports:block/gym_mat",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "rpsports:block/gym_mat",
+      "y": 270
+    }
+  }
+}

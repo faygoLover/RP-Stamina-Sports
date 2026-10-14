@@ -1,0 +1,106 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "bag": "minecraft:block/red_wool",
+    "rod": "minecraft:block/gray_concrete",
+    "particle": "minecraft:block/red_wool"
+  },
+  "elements": [
+    {
+      "from": [
+        4,
+        1,
+        4
+      ],
+      "to": [
+        12,
+        14,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bag"
+        },
+        "south": {
+          "texture": "#bag"
+        },
+        "east": {
+          "texture": "#bag"
+        },
+        "west": {
+          "texture": "#bag"
+        },
+        "up": {
+          "texture": "#bag"
+        },
+        "down": {
+          "texture": "#bag"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        0,
+        5
+      ],
+      "to": [
+        11,
+        1,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bag"
+        },
+        "south": {
+          "texture": "#bag"
+        },
+        "east": {
+          "texture": "#bag"
+        },
+        "west": {
+          "texture": "#bag"
+        },
+        "up": {
+          "texture": "#bag"
+        },
+        "down": {
+          "texture": "#bag"
+        }
+      }
+    },
+    {
+      "from": [
+        7.5,
+        14,
+        7.5
+      ],
+      "to": [
+        8.5,
+        16,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rod"
+        },
+        "south": {
+          "texture": "#rod"
+        },
+        "east": {
+          "texture": "#rod"
+        },
+        "west": {
+          "texture": "#rod"
+        },
+        "up": {
+          "texture": "#rod"
+        },
+        "down": {
+          "texture": "#rod"
+        }
+      }
+    }
+  ]
+}

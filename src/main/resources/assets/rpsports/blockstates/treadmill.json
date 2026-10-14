@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "rpsports:block/treadmill"
+    },
+    "facing=east": {
+      "model": "rpsports:block/treadmill",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "rpsports:block/treadmill",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "rpsports:block/treadmill",
+      "y": 270
+    }
+  }
+}
