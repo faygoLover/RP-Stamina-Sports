@@ -46,7 +46,18 @@ public final class ExerciseAnimations {
         return enabled ? Lib.benchLift(p) : -1;
     }
 
+    /** Середина между кистями лежащего на скамье (система игрока), null — нет эмоции или поз. */
+    @org.jetbrains.annotations.Nullable
+    public static org.joml.Vector3f benchHands(AbstractClientPlayer p) {
+        return enabled ? Lib.benchHands(p) : null;
+    }
+
     private static final class Lib {
+        static org.joml.Vector3f benchHands(AbstractClientPlayer p) {
+            var data = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(p).get(LAYER);
+            return data instanceof ExerciseAnimation anim && anim.benchLift() >= 0 ? anim.handsMid() : null;
+        }
+
         static float benchLift(AbstractClientPlayer p) {
             var data = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(p).get(LAYER);
             return data instanceof ExerciseAnimation anim ? anim.benchLift() : -1;

@@ -46,9 +46,22 @@ public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
         float barX = RACK_X, barY = RACK_Y;
         AbstractClientPlayer lifter = lifter(be);
         if (lifter != null) {
-            float[] h = ExerciseAnimation.benchHands(ExerciseAnimations.benchLift(lifter));
-            barX = SHOULDER_X + h[0];
-            barY = BENCH_PIVOT_Y + h[1];
+            org.joml.Vector3f mid = ExerciseAnimations.benchHands(lifter);
+            if (mid != null) {
+                // Кисти из эмоции: система игрока → мир → блок «на север».
+                org.joml.Vector3f w = mid.rotate(new org.joml.Quaternionf().rotationY((float) Math.toRadians(180 - net.minecraft.util.Mth.rotLerp(partial, lifter.yBodyRotO, lifter.yBodyRot))));
+                double px = net.minecraft.util.Mth.lerp(partial, lifter.xo, lifter.getX()) - be.getBlockPos().getX() - 0.5;
+                double py = net.minecraft.util.Mth.lerp(partial, lifter.yo, lifter.getY()) - be.getBlockPos().getY();
+                double pz = net.minecraft.util.Mth.lerp(partial, lifter.zo, lifter.getZ()) - be.getBlockPos().getZ() - 0.5;
+                org.joml.Vector3f local = new org.joml.Vector3f((float) (px + w.x()), (float) (py + w.y()), (float) (pz + w.z()))
+                        .rotate(new org.joml.Quaternionf().rotationY((float) Math.toRadians(angle(facing))));
+                barX = local.x() + 0.5f;
+                barY = local.y();
+            } else {
+                float[] h = ExerciseAnimation.benchHands(ExerciseAnimations.benchLift(lifter));
+                barX = SHOULDER_X + h[0];
+                barY = BENCH_PIVOT_Y + h[1];
+            }
         }
         TextureAtlasSprite bar = sprite(BAR_TEX), plate = sprite(PLATE_TEX);
         VertexConsumer vc = buffers.getBuffer(RenderType.entitySolid(InventoryMenu.BLOCK_ATLAS));

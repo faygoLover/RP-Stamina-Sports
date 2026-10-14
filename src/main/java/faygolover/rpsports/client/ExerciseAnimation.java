@@ -32,6 +32,8 @@ public final class ExerciseAnimation implements IAnimation {
     /** Гантель в левой руке. */
     boolean leftHand;
     private float shownA, shownB, runPhase;
+    /** Тики эмоций, которые идут по времени: бег (со скоростью темпа), боевая стойка. */
+    private float runTick, stanceTick;
     private long lastNanos;
 
     ExerciseAnimation(AbstractClientPlayer player) {
@@ -65,6 +67,8 @@ public final class ExerciseAnimation implements IAnimation {
         // У груши b — какой удар (не плавно), у остальных — плавно.
         shownB = exercise == Exercise.BAG.ordinal() || exercise == Exercise.DUMBBELL.ordinal() ? b : shownB + (b - shownB) * k;
         if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (7f + 13f * shownA);
+        runTick += dt * 20 * (0.5f + 1.5f * shownA);
+        stanceTick += dt * 20;
         // Тело смотрит туда же, куда игрок поставлен (иначе оно «доворачивается» за головой).
         if (exercise >= 0 && exercise != Exercise.DUMBBELL.ordinal()) {
             player.yBodyRot = player.yBodyRotO = player.getYRot();
@@ -93,7 +97,10 @@ public final class ExerciseAnimation implements IAnimation {
 
     @Override
     public Vec3f get3DTransform(String part, TransformType type, float tickDelta, Vec3f v) {
-        if (exercise < 0 || type == TransformType.BEND) return v;
+        if (exercise < 0) return v;
+        Vec3f e = emote(part, type, v);
+        if (e != null) return e;
+        if (type == TransformType.BEND) return v;
         boolean pos = type == TransformType.POSITION;
         float A = Math.max(0, Math.min(1, shownA));
         return switch (Exercise.VALUES[exercise]) {
@@ -106,6 +113,111 @@ public final class ExerciseAnimation implements IAnimation {
             case SQUAT -> squat(part, pos, v, A);
             case SITUP -> situp(part, pos, v, A);
         };
+    }
+
+    // ------------------------------------------------------------------ эмоции Emotecraft
+
+    /** Жим: насколько поднять лежащего (эмоция лежит на полу, у нас — на подушке скамьи, 8/16). */
+    private static final float BENCH_LIFT = 0.62f;
+    /** Высота перекладины турника над ногами, блоки. */
+    private static final float PULLUP_BAR = 2.406f;
+    /** Сдвиг вверх у турника, чтобы кисти были на нашей перекладине (считается один раз по эмоции). */
+    private static float pullupLift = Float.NaN;
+
+    private static boolean bendOn() {
+        return dev.kosmx.playerAnim.impl.Helper.isBendEnabled();
+    }
+
+    /**
+     * Поза из эмоции для этой части, или null — эмоции нет (тогда своя поза). Отрезки кадров — по разбору эмоций
+     * (docs/test_findings, часть 2): жим 57 (у груди) → 67 (руки прямые); турник 59 (вис) → 78 (подбородок над
+     * перекладиной); отжимания 4 (вверху) → 9,5 (внизу); приседания 0 (стоя) → 4 (внизу); гантель 10 (рука внизу) → 29
+     * (вверху); бег — цикл 5…28 со скоростью темпа; груша — стойка (цикл 15…47), удар — руки из «Карате».
+     */
+    @org.jetbrains.annotations.Nullable
+    private Vec3f emote(String part, TransformType type, Vec3f v) {
+        float A = Math.max(0, Math.min(1, shownA));
+        switch (Exercise.VALUES[exercise]) {
+            case BENCH -> {
+                if (SportEmotes.get("bench") == null) return null;
+                Vec3f r = SportEmotes.sample("bench", 57 + A * 10, part, type, v);
+                return part.equals("body") && type == TransformType.POSITION ? new Vec3f(r.getX(), r.getY() + BENCH_LIFT, r.getZ()) : r;
+            }
+            case PULLUP -> {
+                if (SportEmotes.get("pullup") == null) return null;
+                Vec3f r = SportEmotes.sample("pullup", 59 + A * 19, part, type, v);
+                if (part.equals("body") && type == TransformType.POSITION) return new Vec3f(r.getX(), r.getY() + pullupLift(), r.getZ());
+                return r;
+            }
+            case PUSHUP -> {
+                if (SportEmotes.get("pushup") == null) return null;
+                return SportEmotes.sample("pushup", 4 + A * 5.5f, part, type, v);
+            }
+            case SQUAT -> {
+                if (SportEmotes.get("squat") == null) return null;
+                Vec3f r = SportEmotes.sample("squat", A * 4, part, type, v);
+                if (part.equals("body") && type == TransformType.ROTATION) {
+                    float sway = Math.max(-1, Math.min(1, shownB)) * 0.18f;
+                    return new Vec3f(r.getX(), r.getY(), r.getZ() + sway);
+                }
+                return r;
+            }
+            case DUMBBELL -> {
+                if (SportEmotes.get("dumbbell") == null) return null;
+                if (shownB >= 2) {
+                    // Две гантели: правая рука — эмоция, левая — её зеркало со своим подъёмом; корпус — ровно.
+                    float leftA = Math.max(0, Math.min(1, shownB - 2));
+                    if (part.equals("rightArm")) return SportEmotes.sample("dumbbell", 10 + A * 19, part, type, v);
+                    if (part.equals("leftArm")) return SportEmotes.sampleMirrored("dumbbell", 10 + leftA * 19, part, type, v);
+                    Vec3f r = SportEmotes.sample("dumbbell", 10, part, type, v);
+                    return part.equals("body") && type == TransformType.ROTATION ? new Vec3f(r.getX(), 0, 0) : r;
+                }
+                return leftHand ? SportEmotes.sampleMirrored("dumbbell", 10 + A * 19, part, type, v)
+                        : SportEmotes.sample("dumbbell", 10 + A * 19, part, type, v);
+            }
+            case TREADMILL -> {
+                if (SportEmotes.get("run") == null) return null;
+                return SportEmotes.sample("run", 5 + (runTick % 23), part, type, v);
+            }
+            case BAG -> {
+                if (SportEmotes.get("stance") == null) return null;
+                Vec3f base = SportEmotes.sample("stance", 15 + (stanceTick % 32), part, type, v);
+                int lane = Math.round(shownB);
+                boolean right = lane >= 2, hook = lane == 0 || lane == 3;
+                if (A > 0.01f && SportEmotes.get("karate") != null) {
+                    float u = 1 - A; // удар: 0 — только начался, 1 — рука вернулась
+                    String arm = right ? "rightArm" : "leftArm";
+                    if (part.equals(arm)) return SportEmotes.sample("karate", right ? 8 + u * 12 : 15 + u * 15, part, type, v);
+                    if (hook && part.equals("body") && type == TransformType.ROTATION)
+                        return new Vec3f(base.getX(), base.getY() + (right ? 0.35f : -0.35f) * A, base.getZ());
+                }
+                return base;
+            }
+            default -> {
+                return null;
+            }
+        }
+    }
+
+    /** Турник: сдвиг тела вверх, чтобы кисти в висе (тик 59) были на нашей перекладине. */
+    private float pullupLift() {
+        if (Float.isNaN(pullupLift)) {
+            SportEmotes.Pose raw = (p, t, d) -> SportEmotes.sample("pullup", 59, p, t, d);
+            float hands = (SportEmotes.hand(raw, true, bendOn()).y() + SportEmotes.hand(raw, false, bendOn()).y()) / 2;
+            pullupLift = PULLUP_BAR - hands;
+        }
+        return pullupLift;
+    }
+
+    /** Середина между кистями в системе игрока (для грифа); null — поза не из эмоции. */
+    @org.jetbrains.annotations.Nullable
+    org.joml.Vector3f handsMid() {
+        if (exercise < 0 || SportEmotes.get("bench") == null) return null;
+        SportEmotes.Pose pose = (p, t, d) -> {
+            Vec3f r = emote(p, t, d);
+            return r == null ? d : r;
+        };
+        return SportEmotes.hand(pose, true, bendOn()).add(SportEmotes.hand(pose, false, bendOn())).mul(0.5f);
     }
 
     /** Жим: наклон рук к ногам (штанга опускается к груди) и разведение в стороны, радианы. */
