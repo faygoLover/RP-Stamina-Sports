@@ -8,8 +8,8 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Штанга: долбить E, шкала подъёма растёт (от Силы и веса) и пустеет; вторая полоска — время на это поднятие. Не
- * успел — ошибка. С каждым поднятием труднее. После поднятия штанга плавно опускается.
+ * Штанга: долбить E — кольцо подъёма вокруг клавиши растёт (от Силы и веса) и пустеет; тонкое внешнее кольцо — время
+ * на это поднятие. Не успел — ошибка. С каждым поднятием труднее. После поднятия штанга плавно опускается.
  */
 public class BenchGame extends Minigame {
     private static final float REP_TIME = 4.0f, LOWER_TIME = 1.0f;
@@ -56,12 +56,12 @@ public class BenchGame extends Minigame {
     }
 
     @Override
-    public void key(int key, int action) {
+    protected void key(int key, int action) {
         if (key != GLFW.GLFW_KEY_E || action != GLFW.GLFW_PRESS || lower > 0) return;
         fill += perPress();
         if (fill >= 1) {
             fill = 1;
-            rep(true, 0);
+            rep(true, 0, params.weightKg());
             lifted++;
             lower = LOWER_TIME;
         }
@@ -79,10 +79,12 @@ public class BenchGame extends Minigame {
 
     @Override
     protected int draw(GuiGraphics g, Font font, int x, int y) {
-        bar(g, x, y, W, 8, shown, C_FILL);
-        bar(g, x, y + 9, W, 3, lower > 0 ? 0 : left / REP_TIME, C_TIME);
-        flashFrame(g, x, y, W, 12);
-        label(g, font, Component.translatable("rpsports.ui.bench", reps, PlateItem.format(params.weightKg())), x, y + 15);
-        return 24;
+        float cx = x + W / 2f, cy = y + 26;
+        Qte.small(g, font, Component.translatable("rpsports.ui.mash_kg", PlateItem.format(params.weightKg())), cx, y, Qte.GOLD);
+        Qte.arc(g, cx, cy, 15, 3, 0, 1, Qte.SHADE);
+        Qte.arc(g, cx, cy, 15, 3, 0, shown, flashColor(Qte.GOLD));
+        if (lower <= 0) Qte.arc(g, cx, cy, 19.5f, 1, 0, left / REP_TIME, Qte.WHITE_DIM);
+        Qte.key(g, font, cx, cy, 10, "E", press(GLFW.GLFW_KEY_E), lower <= 0);
+        return 48;
     }
 }

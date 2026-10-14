@@ -60,12 +60,14 @@ final class BadEvents {
                 UNTIL.put(sp.getUUID(), now + 80);
             }
             case DUMBBELL -> {
-                boolean right = s.hand == InteractionHand.MAIN_HAND;
-                bruise(sp, right ? RpIds.PART_RIGHT_FOOT : RpIds.PART_LEFT_FOOT, s.weightKg / 25.0, (float) (1 + s.weightKg / 8.0));
-                ItemStack st = sp.getItemInHand(s.hand);
+                InteractionHand h = s.workHand();
+                boolean right = h == InteractionHand.MAIN_HAND;
+                double kg = s.dual && !right ? s.weightKg2 : s.weightKg;
+                bruise(sp, right ? RpIds.PART_RIGHT_FOOT : RpIds.PART_LEFT_FOOT, kg / 25.0, (float) (1 + kg / 8.0));
+                ItemStack st = sp.getItemInHand(h);
                 if (!st.isEmpty()) {
                     sp.drop(st.copy(), true, false);
-                    sp.setItemInHand(s.hand, ItemStack.EMPTY);
+                    sp.setItemInHand(h, ItemStack.EMPTY);
                 }
                 say(sp, "rpsports.bad.dumbbell");
                 SportsService.stop(sp, null);

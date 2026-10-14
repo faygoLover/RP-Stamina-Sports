@@ -7,15 +7,15 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Пресс: нажать по порядку показанные клавиши из E, R, T, F, пока не кончилось время. Каждые 5 повторов — на одну
- * длиннее (3 → 6). Не та клавиша или не успел — ошибка. С каждой нажатой клавишей корпус поднимается выше.
+ * Пресс — как стратагемы в Helldivers: показана цепочка стрелок, ввести её по порядку (стрелки или WASD), пока не
+ * кончилось время. Каждые 4 повтора цепочка на одну длиннее (4 → 8). Не та стрелка или не успел — ошибка, новая
+ * цепочка. С каждой верной стрелкой корпус поднимается выше.
  */
 public class SitupGame extends Minigame {
-    private static final int[] KEYS = {GLFW.GLFW_KEY_E, GLFW.GLFW_KEY_R, GLFW.GLFW_KEY_T, GLFW.GLFW_KEY_F};
-    private static final String[] NAMES = {"E", "R", "T", "F"};
+    /** Направления: 0 — вверх, 1 — вправо, 2 — вниз, 3 — влево. */
     private int[] seq = new int[0];
     private int idx;
-    private float limit, left, curl;
+    private float limit, left, curl, wrong;
 
     public SitupGame(SportsNet.Open p) {
         super(p);
@@ -23,18 +23,29 @@ public class SitupGame extends Minigame {
     }
 
     private void next() {
-        int len = Math.min(6, 3 + reps / 5);
+        int len = Math.min(8, 4 + reps / 4);
         seq = new int[len];
-        for (int i = 0; i < len; i++) seq[i] = random.nextInt(KEYS.length);
+        for (int i = 0; i < len; i++) seq[i] = random.nextInt(4);
         idx = 0;
-        limit = (2.5f + 0.5f * len) * strengthEase() * params.ease() * (tremble ? 0.8f : 1f) / Math.max(0.7f, params.ratio());
+        limit = (1.6f + 0.45f * len) * strengthEase() * params.ease() * (tremble ? 0.8f : 1f) / Math.max(0.7f, params.ratio());
         left = limit;
+    }
+
+    private static int dir(int key) {
+        return switch (key) {
+            case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> 0;
+            case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_D -> 1;
+            case GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_S -> 2;
+            case GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_A -> 3;
+            default -> -1;
+        };
     }
 
     @Override
     protected void update(float dt) {
         float target = seq.length == 0 ? 0 : (float) idx / seq.length;
         curl = approach(curl, target, dt, 9);
+        if (wrong > 0) wrong -= dt;
         left -= dt;
         if (left <= 0) {
             rep(false, 0);
@@ -44,20 +55,21 @@ public class SitupGame extends Minigame {
 
     @Override
     public boolean owns(int key) {
-        for (int k : KEYS) if (k == key) return true;
-        return false;
+        return dir(key) >= 0;
     }
 
     @Override
-    public void key(int key, int action) {
-        if (!owns(key) || action != GLFW.GLFW_PRESS) return;
-        if (key == KEYS[seq[idx]]) {
+    protected void key(int key, int action) {
+        int d = dir(key);
+        if (d < 0 || action != GLFW.GLFW_PRESS) return;
+        if (d == seq[idx]) {
             idx++;
             if (idx >= seq.length) {
                 rep(true, 0);
                 next();
             }
         } else {
+            wrong = 0.3f;
             rep(false, 0);
             next();
         }
@@ -70,15 +82,17 @@ public class SitupGame extends Minigame {
 
     @Override
     protected int draw(GuiGraphics g, Font font, int x, int y) {
-        int step = 16, sx = x + (W - seq.length * step) / 2;
+        float cx = x + W / 2f;
+        int step = 14;
+        float sx = cx - (seq.length - 1) * step / 2f;
+        g.fill(x + 4, y, x + W - 4, y + 16, Qte.SHADE);
         for (int i = 0; i < seq.length; i++) {
-            int c = i < idx ? C_ZONE : i == idx ? C_FILL : C_DIM;
-            g.fill(sx + i * step, y, sx + i * step + 13, y + 11, C_BG);
-            g.drawCenteredString(font, NAMES[seq[i]], sx + i * step + 7, y + 2, c);
+            int c = i < idx ? Qte.GOLD : i == idx ? (wrong > 0 ? Qte.BAD : Qte.WHITE) : Qte.WHITE_DIM;
+            float size = i == idx ? 10 : 8;
+            Qte.arrow(g, sx + i * step, y + 8, size, seq[i], c);
         }
-        bar(g, x, y + 13, W, 3, left / Math.max(0.1f, limit), C_TIME);
-        flashFrame(g, x, y, W, 16);
-        label(g, font, Component.translatable("rpsports.ui.reps", reps), x, y + 19);
-        return 28;
+        int w = W - 8;
+        g.fill(x + 4, y + 18, x + 4 + Math.round(w * Math.max(0, left / Math.max(0.1f, limit))), y + 19, flashColor(Qte.GOLD));
+        return 21;
     }
 }

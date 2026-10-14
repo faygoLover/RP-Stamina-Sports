@@ -94,7 +94,10 @@ public class RpSports {
         SportsData to = SportsData.get(e.getEntity());
         e.getOriginal().invalidateCaps();
         // После смерти мышцы свежие; при возвращении из Края — те же.
-        if (from != null && to != null && !e.isWasDeath()) to.copyFrom(from);
+        if (from != null && to != null) {
+            if (!e.isWasDeath()) to.copyFrom(from);
+            else to.copyRecords(from);
+        }
     }
 
     private void onLogout(PlayerEvent.PlayerLoggedOutEvent e) {

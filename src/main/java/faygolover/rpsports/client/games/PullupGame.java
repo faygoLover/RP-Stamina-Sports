@@ -103,24 +103,19 @@ public class PullupGame extends Minigame {
         return pose;
     }
 
-    private void circle(GuiGraphics g, int cx, int cy, float r, int color, int dots) {
-        for (int i = 0; i < dots; i++) {
-            double a = i * Math.PI * 2 / dots;
-            int px = cx + (int) Math.round(Math.cos(a) * r), py = cy + (int) Math.round(Math.sin(a) * r);
-            g.fill(px, py, px + 1, py + 1, color);
-        }
-    }
-
     @Override
     protected int draw(GuiGraphics g, Font font, int x, int y) {
-        int cx = x + W / 2, cy = y + 22, max = 20;
-        g.fill(cx - max - 2, cy - max - 2, cx + max + 3, cy + max + 3, C_BG);
-        for (float r = (1 - width) * max; r <= max; r += 0.6f) circle(g, cx, cy, r, C_ZONE_SOFT, 72);
-        circle(g, cx, cy, max, C_DIM, 72);
-        if (phase == Phase.GROW || ring > 0.02f) circle(g, cx, cy, ring * max, phase == Phase.JERK ? C_ZONE : C_MARK, 72);
-        g.drawCenteredString(font, NAMES[keyIndex], cx, cy - 4, C_FILL);
-        flashFrame(g, cx - max - 2, cy - max - 2, max * 2 + 5, max * 2 + 5);
-        label(g, font, Component.translatable("rpsports.ui.pullup", reps), x, y + 47);
+        float cx = x + W / 2f, cy = y + 30, max = 21;
+        Qte.small(g, font, Component.translatable("rpsports.ui.press"), cx, y, Qte.GOLD);
+        Qte.disk(g, cx, cy, max + 2, Qte.SHADE);
+        // Зона — у внешнего края: от (1 − ширина) до края.
+        Qte.arc(g, cx, cy, max * (1 - width / 2), max * width, 0, 1, Qte.GOLD_DIM);
+        Qte.arc(g, cx, cy, max, 1, 0, 1, Qte.GOLD);
+        if (phase == Phase.GROW || ring > 0.02f) {
+            boolean in = ring >= 1 - width;
+            Qte.arc(g, cx, cy, Math.max(1, ring * max), 1.6f, 0, 1, phase == Phase.JERK ? Qte.GOOD : in ? Qte.GOLD_ZONE : Qte.WHITE);
+        }
+        Qte.key(g, font, cx, cy, 7.5f, NAMES[keyIndex], press(KEYS[keyIndex]), phase == Phase.GROW);
         return 56;
     }
 }

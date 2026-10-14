@@ -37,6 +37,16 @@ public final class SportsData {
     public long afterburnUntil;
     /** Восстановлено мышц с прошлой оплаты калориями, %. */
     public double recoveredPercent;
+    /** Рекорды подхода по упражнениям (id → значение). Не пропадают и после смерти. */
+    private final java.util.Map<String, Double> records = new java.util.HashMap<>();
+
+    public double record(faygolover.rpsports.core.Exercise e) {
+        return records.getOrDefault(e.id, 0.0);
+    }
+
+    public void setRecord(faygolover.rpsports.core.Exercise e, double value) {
+        records.put(e.id, value);
+    }
 
     public SportsData() {
         java.util.Arrays.fill(strength, 100);
@@ -60,6 +70,9 @@ public final class SportsData {
             t.put(z.id, c);
         }
         t.putLong("afterburn", afterburnUntil);
+        CompoundTag rec = new CompoundTag();
+        records.forEach(rec::putDouble);
+        t.put("records", rec);
         return t;
     }
 
@@ -74,6 +87,9 @@ public final class SportsData {
             strainSent[i] = c.getInt("st");
         }
         afterburnUntil = t.getLong("afterburn");
+        records.clear();
+        CompoundTag rec = t.getCompound("records");
+        for (String k : rec.getAllKeys()) records.put(k, rec.getDouble(k));
     }
 
     public void copyFrom(SportsData o) {
@@ -83,6 +99,12 @@ public final class SportsData {
         System.arraycopy(o.overload, 0, overload, 0, overload.length);
         System.arraycopy(o.strainSent, 0, strainSent, 0, strainSent.length);
         afterburnUntil = o.afterburnUntil;
+        copyRecords(o);
+    }
+
+    public void copyRecords(SportsData o) {
+        records.clear();
+        records.putAll(o.records);
     }
 
     public static final class Provider implements ICapabilitySerializable<CompoundTag> {

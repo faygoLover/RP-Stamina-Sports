@@ -100,13 +100,18 @@ public class TreadmillGame extends Minigame {
 
     @Override
     protected int draw(GuiGraphics g, Font font, int x, int y) {
-        g.fill(x, y, x + W, y + 7, C_BG);
+        float cx = x + W / 2f;
+        Qte.small(g, font, Component.translatable("rpsports.ui.treadmill", segment % program.length + 1, program.length), cx, y, Qte.GOLD);
         float h = zoneHalf();
-        zone(g, x, y, W, 7, target - h, target + h);
-        marker(g, x, y, W, 7, shown);
-        bar(g, x, y + 8, W, 3, 1 - segTime / SEGMENT, C_TIME);
-        flashFrame(g, x, y, W, 11);
-        label(g, font, Component.translatable("rpsports.ui.treadmill", segment % program.length + 1, program.length), x, y + 14);
-        return 23;
+        Qte.track(g, x + 6, y + 10, W - 12, target - h, target + h, shown, flashColor(Qte.WHITE));
+        // Время отрезка — тонкая линия под шкалой.
+        g.fill(x + 6, y + 15, x + 6 + Math.round((W - 12) * (1 - segTime / SEGMENT)), y + 16, Qte.WHITE_DIM);
+        // Шаги: следующая нога подсвечена.
+        String lmb = Component.translatable("rpsports.ui.lmb").getString(), rmb = Component.translatable("rpsports.ui.rmb").getString();
+        Qte.key(g, font, cx - 16, y + 30, 8.5f, "Q", Math.max(press(GLFW.GLFW_KEY_Q), press(-1)), lastFoot != 0);
+        Qte.key(g, font, cx + 16, y + 30, 8.5f, "E", Math.max(press(GLFW.GLFW_KEY_E), press(-2)), lastFoot != 1);
+        Qte.small(g, font, Component.literal(lmb), cx - 16, y + 41, Qte.WHITE_DIM);
+        Qte.small(g, font, Component.literal(rmb), cx + 16, y + 41, Qte.WHITE_DIM);
+        return 47;
     }
 }

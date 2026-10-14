@@ -17,7 +17,7 @@
           "condition": "minecraft:block_state_property",
           "block": "rpsports:pullup_bar",
           "properties": {
-            "half": "lower"
+            "part": "0"
           }
         }
       ]

@@ -13,6 +13,7 @@ import faygolover.rpsports.capability.SportsData;
 import faygolover.rpsports.core.Exercise;
 import faygolover.rpsports.core.Zone;
 import faygolover.rpsports.entity.SeatEntity;
+import faygolover.rpsports.item.PlateItem;
 import faygolover.rpsports.network.SportsNet;
 import faygolover.rpsports.registry.SportsRegistry;
 import net.minecraft.ChatFormatting;
@@ -115,10 +116,21 @@ public final class SportsService {
         start(sp, e, pos, InteractionHand.MAIN_HAND, kg, PROGRAMS.getOrDefault(sp.getUUID(), 1));
     }
 
+    /** ПКМ гантелью: одна — той рукой; в обеих руках по гантели — обе (Q — левая, E — правая). */
     public static void useDumbbell(ServerPlayer sp, InteractionHand hand, int kg) {
         if (SESSIONS.containsKey(sp.getUUID())) return;
+        if (sp.getMainHandItem().getItem() instanceof faygolover.rpsports.item.DumbbellItem main
+                && sp.getOffhandItem().getItem() instanceof faygolover.rpsports.item.DumbbellItem off) {
+            DUAL_OFF_KG.put(sp.getUUID(), (double) off.kg());
+            start(sp, Exercise.DUMBBELL, null, InteractionHand.MAIN_HAND, main.kg(), 0);
+            DUAL_OFF_KG.remove(sp.getUUID());
+            return;
+        }
         start(sp, Exercise.DUMBBELL, null, hand, kg, 0);
     }
+
+    /** Вес второй гантели на время start() (две гантели). */
+    private static final Map<UUID, Double> DUAL_OFF_KG = new HashMap<>();
 
     public static void startBodyweight(ServerPlayer sp, Exercise e) {
         if (e.kind != Exercise.Kind.BODYWEIGHT || SESSIONS.containsKey(sp.getUUID())) return;
@@ -132,7 +144,7 @@ public final class SportsService {
     /** Зоны упражнения (с рабочей рукой гантели). */
     static Map<Zone, Double> zones(Session s) {
         Map<Zone, Double> m = new java.util.EnumMap<>(s.exercise.fatigue);
-        if (s.exercise == Exercise.DUMBBELL) m.put(s.hand == InteractionHand.MAIN_HAND ? Zone.RIGHT_ARM : Zone.LEFT_ARM, 0.2);
+        if (s.exercise == Exercise.DUMBBELL) m.put(s.workHand() == InteractionHand.MAIN_HAND ? Zone.RIGHT_ARM : Zone.LEFT_ARM, 0.2);
         return m;
     }
 
@@ -140,8 +152,10 @@ public final class SportsService {
         if (sp.isSpectator()) return;
         // С модом тела: перелом, сильная боль, нет руки — нельзя.
         BodyProvider body = RpCoreAPI.body();
-        Map<Zone, Double> worked = e == Exercise.DUMBBELL
-                ? Map.of(hand == InteractionHand.MAIN_HAND ? Zone.RIGHT_ARM : Zone.LEFT_ARM, 0.2) : e.fatigue;
+        Double dualKg = e == Exercise.DUMBBELL ? DUAL_OFF_KG.get(sp.getUUID()) : null;
+        Map<Zone, Double> worked = e != Exercise.DUMBBELL ? e.fatigue : dualKg != null
+                ? Map.of(Zone.RIGHT_ARM, 0.2, Zone.LEFT_ARM, 0.2)
+                : Map.of(hand == InteractionHand.MAIN_HAND ? Zone.RIGHT_ARM : Zone.LEFT_ARM, 0.2);
         if (body != null) {
             for (Zone z : worked.keySet()) {
                 for (ResourceLocation part : z.parts) {
@@ -185,12 +199,23 @@ public final class SportsService {
         boolean onMat = e.kind == Exercise.Kind.BODYWEIGHT && (sp.level().getBlockState(sp.blockPosition()).is(SportsRegistry.GYM_MAT.get())
                 || sp.level().getBlockState(sp.blockPosition().below()).is(SportsRegistry.GYM_MAT.get()));
         Session s = new Session(e, pos, hand, kg, ratio, str, fit, ease, program, onMat, clothing, heavy);
+        if (dualKg != null) {
+            s.dual = true;
+            s.weightKg2 = dualKg;
+            s.ratio2 = dualKg / Math.max(1, ownWeight(e, str));
+        }
         s.started = sp.level().getGameTime();
         s.lastRep = s.started;
-        place(sp, s);
+        if (!place(sp, s)) {
+            sp.displayClientMessage(Component.translatable("rpsports.msg.no_room").withStyle(ChatFormatting.GRAY), true);
+            return;
+        }
         SESSIONS.put(sp.getUUID(), s);
+        // В творческом упражнения тоже тратят выносливость (RP Stamina 1.4.1) — тег снимется, когда она восстановится.
+        if (sp.isCreative()) sp.addTag(FORCE_STAMINA);
         SportsNet.send(sp, new SportsNet.Open(e.ordinal(), (float) ratio, str, fit, (float) ease, (float) kg,
-                hand == InteractionHand.MAIN_HAND ? 0 : 1, program));
+                s.dual ? 2 : hand == InteractionHand.MAIN_HAND ? 0 : 1, program, (float) s.weightKg2, (float) s.ratio2,
+                (float) d.record(e)));
         if (ratio > 1.4 && e.weighted())
             sp.displayClientMessage(Component.translatable("rpsports.msg.too_heavy").withStyle(ChatFormatting.GOLD), true);
         SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), e.ordinal(), 0, 0));
@@ -205,8 +230,8 @@ public final class SportsService {
      *   <li>гантели — ходить можно.</li>
      * </ul>
      */
-    private static void place(ServerPlayer sp, Session s) {
-        if (s.exercise == Exercise.DUMBBELL) return;
+    private static boolean place(ServerPlayer sp, Session s) {
+        if (s.exercise == Exercise.DUMBBELL) return true;
         Level level = sp.level();
         BlockPos pos = s.pos;
         Direction facing = pos != null && level.getBlockState(pos).hasProperty(MachineBlock.FACING)
@@ -217,15 +242,17 @@ public final class SportsService {
             double cx = pos.getX() + 0.5, cz = pos.getZ() + 0.5;
             switch (s.exercise) {
                 case BENCH -> {
-                    // Стойка с грифом — с «левой» стороны модели; ноги — в другую сторону.
+                    // Скамья в два блока: основание — со стойкой, второй блок — под ноги (по часовой от FACING).
                     Direction feet = facing.getClockWise();
                     x = cx + feet.getStepX() * BENCH_SHIFT;
                     z = cz + feet.getStepZ() * BENCH_SHIFT;
                     yaw = feet.toYRot();
                 }
                 case PULLUP -> {
-                    x = cx;
-                    z = cz;
+                    // Турник 2 блока в ширину — висит посередине, между блоками.
+                    Direction right = facing.getClockWise();
+                    x = cx + right.getStepX() * 0.5;
+                    z = cz + right.getStepZ() * 0.5;
                     y = pos.getY();
                     yaw = facing.toYRot();
                 }
@@ -236,13 +263,15 @@ public final class SportsService {
                     yaw = facing.toYRot();
                 }
                 case BAG -> {
+                    // Встать на блок перед грушей — только если там можно нормально стоять.
                     BlockPos spot = pos.relative(facing);
-                    if (level.getBlockState(spot).getCollisionShape(level, spot).isEmpty()
-                            && level.getBlockState(spot.above()).getCollisionShape(level, spot.above()).isEmpty()) {
-                        x = spot.getX() + 0.5;
-                        z = spot.getZ() + 0.5;
-                        y = pos.getY();
-                    }
+                    boolean free = level.getBlockState(spot).getCollisionShape(level, spot).isEmpty()
+                            && level.getBlockState(spot.above()).getCollisionShape(level, spot.above()).isEmpty();
+                    boolean floor = level.getBlockState(spot.below()).isFaceSturdy(level, spot.below(), Direction.UP);
+                    if (!free || !floor) return false;
+                    x = spot.getX() + 0.5;
+                    z = spot.getZ() + 0.5;
+                    y = spot.getY();
                     yaw = facing.getOpposite().toYRot();
                 }
                 default -> { }
@@ -261,10 +290,17 @@ public final class SportsService {
         } else {
             s.anchor = new net.minecraft.world.phys.Vec3(x, y, z);
         }
+        return true;
     }
 
-    /** Скамья: насколько сиденье сдвинуто от центра к ногам (чтобы голова и плечи были под грифом). */
-    private static final double BENCH_SHIFT = 0.24;
+    /** Повтор «упал» у приседаний (клиент — SquatGame.FELL). */
+    private static final int SQUAT_FELL = 9;
+
+    /** Тег RP Stamina: выносливость считается и в творческом. */
+    private static final String FORCE_STAMINA = "rpstamina.force";
+
+    /** Скамья: насколько сиденье сдвинуто от центра блока со стойкой к ногам (плечи — под грифом). */
+    private static final double BENCH_SHIFT = 0.87;
     /** Скамья: высота сиденья над блоком — спина ложится на подушку (верх подушки на 8/16). */
     public static final double SEAT_Y = 0.267;
 
@@ -287,11 +323,18 @@ public final class SportsService {
         // Груша: удары идут нотами (иногда «двойкой») — между ударами не меньше 3 тиков.
         double minTicks = s.exercise == Exercise.BAG ? 3
                 : s.exercise.repSeconds * 20 * (s.exercise == Exercise.TREADMILL ? 0.8 : 0.35);
-        if (now - s.lastRep < minTicks) return; // слишком часто — не считаем (макросы)
+        // Две гантели: у каждой руки свой счёт (extra: 0 — основная, 1 — вторая).
+        int handIdx = s.dual && extra == 1 ? 1 : 0;
+        long last = s.dual ? s.lastRepHand[handIdx] : s.lastRep;
+        if (now - last < minTicks) return; // слишком часто — не считаем (макросы)
         s.lastRep = now;
+        s.lastRepHand[handIdx] = now;
+        if (s.dual) s.lastHand = handIdx == 1 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        double ratio = s.dual && handIdx == 1 ? s.ratio2 : s.ratio;
+        double kg = s.dual && handIdx == 1 ? s.weightKg2 : s.weightKg;
         var cfg = SportsConfig.EXERCISES.get(s.exercise);
         double armor = s.armorMult(SportsConfig.get(SportsConfig.ARMOR_PENALTY));
-        double load = s.exercise.weighted() || s.exercise.bodyweight() ? Math.max(0.3, s.ratio) : 1;
+        double load = s.exercise.weighted() || s.exercise.bodyweight() ? Math.max(0.3, ratio) : 1;
 
         // Выносливость: повтор (дорожка — по темпу, каждую секунду в тике).
         StaminaProvider stamina = RpCoreAPI.stamina();
@@ -303,7 +346,7 @@ public final class SportsService {
         Map<Zone, Double> zones = zones(s);
         if (s.exercise == Exercise.BAG) zones.put(extra == 0 ? Zone.LEFT_ARM : Zone.RIGHT_ARM, 0.1);
         double fat = cfg.fatigue().get() * SportsConfig.fitnessFatigue(s.fitness) * armor
-                * (s.exercise.weighted() ? Math.max(0.3, s.ratio) : 1) * (success ? 1 : SportsConfig.get(SportsConfig.ERROR_FATIGUE));
+                * (s.exercise.weighted() ? Math.max(0.3, ratio) : 1) * (success ? 1 : SportsConfig.get(SportsConfig.ERROR_FATIGUE));
         double zoneXp = 1;
         for (var z : zones.entrySet()) {
             int i = z.getKey().ordinal();
@@ -315,8 +358,11 @@ public final class SportsService {
         // Опыт за удачный повтор.
         if (success) {
             s.reps++;
+            s.series++;
+            s.bestSeries = Math.max(s.bestSeries, s.series);
+            s.volume += s.exercise.weighted() ? kg : 1;
             double mult = zoneXp;
-            if (s.exercise.weighted()) mult *= weightEfficiency(s.ratio);
+            if (s.exercise.weighted()) mult *= weightEfficiency(ratio);
             mult *= 1 + s.clothing * SportsConfig.get(SportsConfig.CLOTHING_XP);
             if (s.onMat) mult *= 1 + SportsConfig.get(SportsConfig.MAT_XP);
             if (RpCoreAPI.hasTrait(sp, RpIds.GYM_LOVER)) mult *= SportsConfig.get(SportsConfig.GYM_LOVER_XP);
@@ -329,8 +375,15 @@ public final class SportsService {
             }
         } else {
             s.errors++;
+            s.series = 0;
         }
         d.afterburnUntil = now + (long) (SportsConfig.get(SportsConfig.AFTERBURN_HOURS) * 72000);
+        // Приседания: долго без равновесия — упал, упражнение кончилось.
+        if (!success && s.exercise == Exercise.SQUAT && extra == SQUAT_FELL) {
+            sp.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 60, 3, false, false, false));
+            stop(sp, "rpsports.bad.squat_fall");
+            return;
+        }
 
         // Выносливость кончилась — плохое событие.
         afterLoad(sp, s, d, now);
@@ -355,7 +408,7 @@ public final class SportsService {
         Session s = SESSIONS.get(sp.getUUID());
         if (s == null) return;
         s.a = Math.max(0, Math.min(2, a));
-        s.b = Math.max(-2, Math.min(2, b));
+        s.b = Math.max(-3, Math.min(3, b));
         long now = sp.level().getGameTime();
         if (now - s.lastRelay < 2) return;
         s.lastRelay = now;
@@ -367,6 +420,17 @@ public final class SportsService {
     public static void stop(ServerPlayer sp, @Nullable String reason) {
         Session s = SESSIONS.remove(sp.getUUID());
         if (s == null) return;
+        SportsData data = SportsData.get(sp);
+        if (data != null) {
+            // Рекорд подхода: штанга и гантели — повторы × вес, груша — лучшая серия, остальное — повторы.
+            double value = s.exercise.weighted() ? s.volume : s.exercise == Exercise.BAG ? s.bestSeries : s.reps;
+            if (value > 0 && value > data.record(s.exercise)) {
+                boolean had = data.record(s.exercise) > 0;
+                data.setRecord(s.exercise, value);
+                if (had) sp.sendSystemMessage(Component.translatable("rpsports.msg.record",
+                        Component.translatable(s.exercise.key()), PlateItem.format(value)).withStyle(ChatFormatting.GOLD));
+            }
+        }
         if (s.seatId != null) {
             Entity seat = sp.level().getEntity(s.seatId);
             if (sp.getVehicle() == seat) sp.stopRiding();
@@ -391,6 +455,10 @@ public final class SportsService {
         long now = sp.level().getGameTime();
         Session s = SESSIONS.get(sp.getUUID());
         if (s != null) sessionTick(sp, s, d, now);
+        else if (sp.getTags().contains(FORCE_STAMINA)) {
+            StaminaProvider st = RpCoreAPI.stamina();
+            if (st == null || !sp.isCreative() || st.stamina(sp) >= st.maxStamina(sp) - 0.5f) sp.removeTag(FORCE_STAMINA);
+        }
         Muscles.recover(sp, d, 1, sp.isSleeping(), now);
         // Дожигание после тренировки.
         NutritionProvider n = RpCoreAPI.nutrition();
@@ -414,7 +482,8 @@ public final class SportsService {
             stop(sp, null);
             return;
         }
-        if (s.exercise == Exercise.DUMBBELL && !(sp.getItemInHand(s.hand).getItem() instanceof faygolover.rpsports.item.DumbbellItem)) {
+        if (s.exercise == Exercise.DUMBBELL && (!(sp.getItemInHand(s.hand).getItem() instanceof faygolover.rpsports.item.DumbbellItem)
+                || s.dual && !(sp.getOffhandItem().getItem() instanceof faygolover.rpsports.item.DumbbellItem))) {
             stop(sp, null);
             return;
         }

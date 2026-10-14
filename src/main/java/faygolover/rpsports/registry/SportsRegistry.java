@@ -4,7 +4,7 @@ import faygolover.rpsports.RpSports;
 import faygolover.rpsports.block.BenchBlock;
 import faygolover.rpsports.block.BenchBlockEntity;
 import faygolover.rpsports.block.MachineBlock;
-import faygolover.rpsports.block.PullupBarBlock;
+import faygolover.rpsports.block.MultiBlockMachine;
 import faygolover.rpsports.core.Exercise;
 import faygolover.rpsports.entity.SeatEntity;
 import faygolover.rpsports.item.DumbbellItem;
@@ -49,18 +49,28 @@ public final class SportsRegistry {
         return BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.5f, 6f).sound(SoundType.METAL).noOcclusion();
     }
 
-    // Формы (коллизия) — коробки по модели. Модели тоже коробки (решение брата: настоящие — потом).
-    private static final VoxelShape BENCH_SHAPE = Block.box(0, 0, 3, 16, 9, 13);
-    private static final VoxelShape PULLUP_SHAPE = Shapes.or(Block.box(0, 0, 6, 2, 16, 10), Block.box(14, 0, 6, 16, 16, 10));
-    private static final VoxelShape BAG_SHAPE = Block.box(4, 0, 4, 12, 16, 12);
+    // Формы (коллизия) — коробки по модели, «на север»; у многоблочных — по части. Модели тоже коробки (решение
+    // брата: настоящие — потом). Столбцы многоблочных идут на восток (вправо от ставившего), ряды — вверх.
+    private static final VoxelShape BENCH_HEAD = Shapes.or(Block.box(2, 0, 4, 16, 8, 12),
+            Block.box(12, 0, 3, 13, 16, 4), Block.box(12, 0, 12, 13, 16, 13));
+    private static final VoxelShape BENCH_FOOT = Block.box(0, 0, 4, 13, 8, 12);
+    private static final VoxelShape POST_L = Block.box(1, 0, 6, 3, 16, 10), POST_R = Block.box(13, 0, 6, 15, 16, 10);
+    private static final VoxelShape TOP_L = Shapes.or(Block.box(1, 0, 6, 3, 8, 10), Block.box(3, 6, 7.5, 16, 7, 8.5));
+    private static final VoxelShape TOP_R = Shapes.or(Block.box(13, 0, 6, 15, 8, 10), Block.box(0, 6, 7.5, 13, 7, 8.5));
+    private static final VoxelShape BAG_LOW = Block.box(4, 11, 4, 12, 16, 12);
+    private static final VoxelShape BAG_HIGH = Shapes.or(Block.box(4, 0, 4, 12, 12, 12), Block.box(7.5, 12, 7.5, 8.5, 16, 8.5));
     private static final VoxelShape TREADMILL_SHAPE = Block.box(0, 0, 0, 16, 3, 16);
     private static final VoxelShape MAT_SHAPE = Block.box(0, 0, 0, 16, 1, 16);
 
-    public static final RegistryObject<Block> BENCH = BLOCKS.register("bench", () -> new BenchBlock(metal(), BENCH_SHAPE));
-    public static final RegistryObject<Block> PULLUP_BAR = BLOCKS.register("pullup_bar", () -> new PullupBarBlock(metal(), PULLUP_SHAPE, PULLUP_SHAPE));
+    /** Скамья 2 блока в длину (стойка с грифом + под ноги). */
+    public static final RegistryObject<Block> BENCH = BLOCKS.register("bench", () -> new BenchBlock(metal(), BENCH_HEAD, BENCH_FOOT));
+    /** Турник 2 в ширину и 3 в высоту, перекладина на ~2,4 блока; игрок висит посередине. */
+    public static final RegistryObject<Block> PULLUP_BAR = BLOCKS.register("pullup_bar",
+            () -> new MultiBlockMachine(metal(), Exercise.PULLUP, 2, 3, POST_L, POST_R, POST_L, POST_R, TOP_L, TOP_R));
+    /** Груша 2 блока в высоту, висит в верхних двух третях. */
     public static final RegistryObject<Block> PUNCHING_BAG = BLOCKS.register("punching_bag",
-            () -> new MachineBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(1f).sound(SoundType.WOOL).noOcclusion(),
-                    BAG_SHAPE, Exercise.BAG));
+            () -> new MultiBlockMachine(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(1f).sound(SoundType.WOOL).noOcclusion(),
+                    Exercise.BAG, 1, 2, BAG_LOW, BAG_HIGH));
     public static final RegistryObject<Block> TREADMILL = BLOCKS.register("treadmill", () -> new MachineBlock(metal(), TREADMILL_SHAPE, Exercise.TREADMILL));
     public static final RegistryObject<Block> GYM_MAT = BLOCKS.register("gym_mat",
             () -> new MachineBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLUE).strength(0.3f).sound(SoundType.WOOL).noOcclusion(),

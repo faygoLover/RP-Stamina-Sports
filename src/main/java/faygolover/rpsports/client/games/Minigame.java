@@ -1,31 +1,41 @@
 package faygolover.rpsports.client.games;
 
 import faygolover.rpsports.core.Exercise;
+import faygolover.rpsports.item.PlateItem;
 import faygolover.rpsports.network.SportsNet;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Мини-игра упражнения (клиент). Маленький виджет внизу по центру, без отдельного окна (docs/00 «Интерфейс»). Сама
- * решает, удался ли повтор, и сообщает серверу; отдаёт позу для анимации ({@link #poseA}, {@link #poseB}).
+ * Мини-игра упражнения (клиент) — QTE в духе A Way Out: минимум текста, нарисованные клавиши, которые нажимаются,
+ * кольца и дуги. Маленький виджет внизу по центру (docs/00 «Интерфейс»). Сама решает, удался ли повтор, и сообщает
+ * серверу; отдаёт позу для анимации ({@link #poseA}, {@link #poseB}).
  *
- * <p>Под виджетом — подсказка клавиш. Дрожь (мало выносливости, устала зона) — весь виджет плавно и чуть-чуть
- * покачивается целиком, на целые пиксели.
+ * <p>Под виджетом — мелко: повторы в подходе, серия, рекорд. Дрожь (мало выносливости, устала зона) — весь виджет
+ * плавно дрожит по обеим осям (не скачками по пикселям).
  */
 public abstract class Minigame {
     public static final int W = 120;
-    protected static final int C_BG = 0xA0000000, C_FILL = 0xFFE3B341, C_TIME = 0xFF6BA8E0, C_ZONE = 0xFF4CB050,
-            C_ZONE_SOFT = 0x904CB050, C_BAD = 0xFFE06C6C, C_TEXT = 0xFFE6E6E6, C_DIM = 0xFF9AA0AA, C_MARK = 0xFFFFFFFF;
 
     protected final SportsNet.Open params;
     protected final RandomSource random = RandomSource.create();
     protected boolean tremble;
-    protected int reps;
+    /** Удачных повторов в подходе (своих; сервер присылает свои — берём большее), серия удачных подряд, лучшая серия. */
+    protected int reps, series, bestSeries;
+    /** Объём подхода — повторы × вес (штанга, гантели). */
+    protected float volume;
     /** Вспышка после повтора: >0 — успех, <0 — ошибка (секунды). */
     protected float flash;
     protected float time;
+    private float trembleAmp;
+    /** Нажатие клавиш для анимации значков: клавиша → оставшееся время «нажатости». */
+    private final Map<Integer, Float> pressed = new HashMap<>();
+    private final Map<Integer, Boolean> held = new HashMap<>();
 
     protected Minigame(SportsNet.Open params) {
         this.params = params;
@@ -33,6 +43,11 @@ public abstract class Minigame {
 
     public Exercise exercise() {
         return Exercise.VALUES[params.exercise()];
+    }
+
+    /** Секунд с начала упражнения. */
+    public float elapsed() {
+        return time;
     }
 
     /** Сила и Телосложение выше обычного (3) — легче. */
@@ -44,17 +59,12 @@ public abstract class Minigame {
         return 1f + 0.04f * (params.fitness() - 3);
     }
 
-    /** Секунд с начала упражнения. */
-    public float elapsed() {
-        return time;
-    }
-
     public void setTremble(boolean t) {
         tremble = t;
     }
 
     public void setReps(int r) {
-        reps = r;
+        reps = Math.max(reps, r);
     }
 
     /** Шаг, {@code dt} — секунды. */
@@ -62,16 +72,35 @@ public abstract class Minigame {
         time += dt;
         if (flash > 0) flash = Math.max(0, flash - dt);
         else if (flash < 0) flash = Math.min(0, flash + dt);
+        trembleAmp = approach(trembleAmp, tremble ? 1 : 0, dt, 4);
+        pressed.replaceAll((k, v) -> Math.max(0, v - dt));
         update(dt);
     }
 
     protected abstract void update(float dt);
 
     /** Клавиша (GLFW): нажатие, повтор или отпускание. */
-    public void key(int key, int action) {}
+    public final void keyEvent(int key, int action) {
+        if (action == org.lwjgl.glfw.GLFW.GLFW_PRESS) pressed.put(key, 0.12f);
+        held.put(key, action != org.lwjgl.glfw.GLFW.GLFW_RELEASE);
+        key(key, action);
+    }
 
-    /** Кнопка мыши (0 — левая, 1 — правая), только нажатие. */
-    public void mouse(int button) {}
+    /** Кнопка мыши (0 — левая, 1 — правая), только нажатие. Для значков — как клавиши −1 и −2. */
+    public final void mouseEvent(int button) {
+        pressed.put(-1 - button, 0.12f);
+        mouse(button);
+    }
+
+    protected void key(int key, int action) {}
+
+    protected void mouse(int button) {}
+
+    /** Насколько «нажат» значок клавиши: 1 — только что нажата (или держится), 0 — нет. Мышь: −1 левая, −2 правая. */
+    protected float press(int key) {
+        if (Boolean.TRUE.equals(held.get(key))) return 1;
+        return Math.min(1, pressed.getOrDefault(key, 0f) / 0.12f);
+    }
 
     /** Какие клавиши мини-игра забирает себе (абсолютный приоритет на время упражнения). */
     public abstract boolean owns(int key);
@@ -86,38 +115,56 @@ public abstract class Minigame {
         return 0;
     }
 
-    /** Повтор окончен: сообщить серверу. */
-    protected void rep(boolean success, int extra) {
+    /** Повтор окончен: сообщить серверу. {@code kg} — вес этого повтора (для объёма), 0 — без веса. */
+    protected void rep(boolean success, int extra, float kg) {
         flash = success ? 0.35f : -0.5f;
-        if (success) reps++;
+        if (success) {
+            reps++;
+            series++;
+            bestSeries = Math.max(bestSeries, series);
+            volume += kg;
+        } else {
+            series = 0;
+        }
         SportsNet.toServer(new SportsNet.Rep(success, extra));
     }
 
-    /** Нарисовать виджет: (x, y) — верхний левый угол. */
-    public final void render(GuiGraphics g, Font font, int x, int y) {
-        int dx = shake();
-        g.pose().pushPose();
-        g.pose().translate(dx, 0, 0);
-        int h = draw(g, font, x, y);
-        g.pose().popPose();
-        Component hint = Component.translatable("rpsports.hint." + exercise().id);
-        int hy = y + h + 2;
-        for (var line : font.split(hint, W + 60)) {
-            g.drawCenteredString(font, line, x + W / 2, hy, C_DIM);
-            hy += 9;
-        }
+    protected void rep(boolean success, int extra) {
+        rep(success, extra, 0);
     }
 
-    /** Нарисовать содержимое; вернуть его высоту (подсказка — ниже). */
+    /** Нарисовать виджет: (x, y) — верхний левый угол, ширина {@link #W}. */
+    public final void render(GuiGraphics g, Font font, int x, int y) {
+        g.pose().pushPose();
+        if (trembleAmp > 0.01f) {
+            // Дрожь рук: быстрые мелкие колебания + медленный увод, по обеим осям.
+            float dx = (float) (Math.sin(time * 41) * 0.55 + Math.sin(time * 23 + 1.3) * 0.35 + Math.sin(time * 7 + 0.4) * 0.5);
+            float dy = (float) (Math.sin(time * 37 + 2.1) * 0.55 + Math.sin(time * 19 + 0.7) * 0.35 + Math.sin(time * 5 + 2.6) * 0.4);
+            g.pose().translate(dx * 1.8f * trembleAmp, dy * 1.5f * trembleAmp, 0);
+        }
+        int h = draw(g, font, x, y);
+        stats(g, font, x + W / 2f, y + h + 2);
+        g.pose().popPose();
+    }
+
+    /** Нарисовать содержимое; вернуть его высоту (строка статистики — ниже). */
     protected abstract int draw(GuiGraphics g, Font font, int x, int y);
 
-    // ------------------------------------------------------------------ плавность
-
-    /** Сдвиг дрожи: медленное покачивание на 1–2 пикселя (целые пиксели — без полупрозрачных краёв). */
-    private int shake() {
-        if (!tremble) return 0;
-        return Math.round((float) (Math.sin(time * 5.0) * 1.1 + Math.sin(time * 2.3 + 1) * 0.7));
+    /** Значение подхода для рекорда: штанга и гантели — объём, груша — лучшая серия, остальное — повторы. */
+    protected float setValue() {
+        return exercise().weighted() ? volume : exercise() == Exercise.BAG ? bestSeries : reps;
     }
+
+    private void stats(GuiGraphics g, Font font, float cx, float y) {
+        float rec = Math.max(params.record(), setValue());
+        boolean beaten = setValue() > params.record() && params.record() > 0;
+        Component line = exercise().weighted()
+                ? Component.translatable("rpsports.ui.stats_weight", reps, PlateItem.format(volume), series, PlateItem.format(rec))
+                : Component.translatable("rpsports.ui.stats", reps, series, PlateItem.format(rec));
+        Qte.small(g, font, line, cx, y, beaten ? Qte.GOLD_ZONE : Qte.WHITE_DIM);
+    }
+
+    // ------------------------------------------------------------------ плавность
 
     /** Плавная «дрожь» значения: медленный шум −1…1 (сумма синусов). */
     protected float wobble(float speed) {
@@ -129,32 +176,11 @@ public abstract class Minigame {
         return cur + (target - cur) * (1 - (float) Math.exp(-rate * dt));
     }
 
-    // ------------------------------------------------------------------ рисование
-
-    protected void bar(GuiGraphics g, int x, int y, int w, int h, float frac, int color) {
-        g.fill(x, y, x + w, y + h, C_BG);
-        int f = Math.round(Math.max(0, Math.min(1, frac)) * (w - 2));
-        if (f > 0) g.fill(x + 1, y + 1, x + 1 + f, y + h - 1, color);
-    }
-
-    protected void zone(GuiGraphics g, int x, int y, int w, int h, float from, float to) {
-        int a = x + 1 + Math.round(Math.max(0, from) * (w - 2)), b = x + 1 + Math.round(Math.min(1, to) * (w - 2));
-        if (b > a) g.fill(a, y + 1, b, y + h - 1, C_ZONE_SOFT);
-    }
-
-    /** Маркер на полосе: {@code frac} 0…1. */
-    protected void marker(GuiGraphics g, int x, int y, int w, int h, float frac) {
-        int mx = x + 1 + Math.round(clamp(frac) * (w - 4));
-        g.fill(mx, y - 1, mx + 2, y + h + 1, C_MARK);
-    }
-
-    protected void flashFrame(GuiGraphics g, int x, int y, int w, int h) {
-        if (flash == 0) return;
-        g.renderOutline(x - 1, y - 1, w + 2, h + 2, flash > 0 ? C_ZONE : C_BAD);
-    }
-
-    protected void label(GuiGraphics g, Font font, Component text, int x, int y) {
-        g.drawString(font, text, x, y, C_TEXT, true);
+    /** Цвет значка после повтора: вспышка успеха/ошибки. */
+    protected int flashColor(int normal) {
+        if (flash > 0) return Qte.GOOD;
+        if (flash < 0) return Qte.BAD;
+        return normal;
     }
 
     protected static float clamp(float v) {

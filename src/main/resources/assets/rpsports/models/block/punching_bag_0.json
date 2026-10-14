@@ -1,0 +1,43 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "bag": "minecraft:block/red_wool",
+    "rod": "minecraft:block/gray_concrete",
+    "particle": "minecraft:block/red_wool"
+  },
+  "elements": [
+    {
+      "from": [
+        4,
+        11,
+        4
+      ],
+      "to": [
+        12,
+        16,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bag"
+        },
+        "south": {
+          "texture": "#bag"
+        },
+        "east": {
+          "texture": "#bag"
+        },
+        "west": {
+          "texture": "#bag"
+        },
+        "up": {
+          "texture": "#bag"
+        },
+        "down": {
+          "texture": "#bag"
+        }
+      }
+    }
+  ]
+}

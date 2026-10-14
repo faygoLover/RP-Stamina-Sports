@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 public final class SportsNet {
     private SportsNet() {}
 
-    private static final String VERSION = "1";
+    private static final String VERSION = "2";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(RpSports.MODID, "main"),
             () -> VERSION, VERSION::equals, VERSION::equals);
 
@@ -85,16 +85,22 @@ public final class SportsNet {
      * @param fitness    уровень Телосложения
      * @param ease       множитель ширины зон (Ловкий, Плохая координация, броня)
      * @param weightKg   вес снаряда (для подписи)
-     * @param hand       гантель: 0 — правая (основная), 1 — левая
+     * @param hand       гантель: 0 — правая (основная), 1 — левая, 2 — обе
      * @param program    дорожка: 0 ходьба, 1 интервалы, 2 бег
+     * @param weightKg2  вторая гантель (у двух), кг
+     * @param ratio2     её отношение веса
+     * @param record     рекорд подхода (штанга, гантели — повторы × вес; груша — серия; остальное — повторы)
      */
-    public record Open(int exercise, float ratio, int strength, int fitness, float ease, float weightKg, int hand, int program) {
+    public record Open(int exercise, float ratio, int strength, int fitness, float ease, float weightKg, int hand, int program,
+                       float weightKg2, float ratio2, float record) {
         static void encode(Open p, FriendlyByteBuf b) {
             b.writeVarInt(p.exercise); b.writeFloat(p.ratio); b.writeVarInt(p.strength); b.writeVarInt(p.fitness);
             b.writeFloat(p.ease); b.writeFloat(p.weightKg); b.writeVarInt(p.hand); b.writeVarInt(p.program);
+            b.writeFloat(p.weightKg2); b.writeFloat(p.ratio2); b.writeFloat(p.record);
         }
         static Open decode(FriendlyByteBuf b) {
-            return new Open(b.readVarInt(), b.readFloat(), b.readVarInt(), b.readVarInt(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readVarInt());
+            return new Open(b.readVarInt(), b.readFloat(), b.readVarInt(), b.readVarInt(), b.readFloat(), b.readFloat(), b.readVarInt(), b.readVarInt(),
+                    b.readFloat(), b.readFloat(), b.readFloat());
         }
         static void handle(Open p, Supplier<NetworkEvent.Context> c) {
             client(c, () -> faygolover.rpsports.client.ClientSession.open(p));

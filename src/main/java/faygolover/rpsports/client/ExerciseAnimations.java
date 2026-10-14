@@ -36,8 +36,8 @@ public final class ExerciseAnimations {
         if (mc.level == null) return;
         Entity e = mc.level.getEntity(m.entityId());
         if (!(e instanceof AbstractClientPlayer p) || p == mc.player) return;
-        // У гантели b — рука (0 правая, 1 левая).
-        boolean left = m.exercise() == Exercise.DUMBBELL.ordinal() && m.b() >= 0.5f;
+        // У гантели b — рука (0 правая, 1 левая); 2 и больше — обе (2 + подъём левой).
+        boolean left = m.exercise() == Exercise.DUMBBELL.ordinal() && m.b() >= 0.5f && m.b() < 2;
         Lib.set(p, m.exercise(), m.a(), m.b(), left);
     }
 

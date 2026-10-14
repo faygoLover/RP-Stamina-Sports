@@ -1,33 +1,93 @@
 {
   "variants": {
-    "facing=north,half=lower": {
-      "model": "rpsports:block/pullup_bar_bottom"
+    "facing=north,part=0": {
+      "model": "rpsports:block/pullup_bar_0"
     },
-    "facing=north,half=upper": {
-      "model": "rpsports:block/pullup_bar_top"
+    "facing=north,part=1": {
+      "model": "rpsports:block/pullup_bar_1"
     },
-    "facing=east,half=lower": {
-      "model": "rpsports:block/pullup_bar_bottom",
+    "facing=north,part=2": {
+      "model": "rpsports:block/pullup_bar_2"
+    },
+    "facing=north,part=3": {
+      "model": "rpsports:block/pullup_bar_3"
+    },
+    "facing=north,part=4": {
+      "model": "rpsports:block/pullup_bar_4"
+    },
+    "facing=north,part=5": {
+      "model": "rpsports:block/pullup_bar_5"
+    },
+    "facing=east,part=0": {
+      "model": "rpsports:block/pullup_bar_0",
       "y": 90
     },
-    "facing=east,half=upper": {
-      "model": "rpsports:block/pullup_bar_top",
+    "facing=east,part=1": {
+      "model": "rpsports:block/pullup_bar_1",
       "y": 90
     },
-    "facing=south,half=lower": {
-      "model": "rpsports:block/pullup_bar_bottom",
+    "facing=east,part=2": {
+      "model": "rpsports:block/pullup_bar_2",
+      "y": 90
+    },
+    "facing=east,part=3": {
+      "model": "rpsports:block/pullup_bar_3",
+      "y": 90
+    },
+    "facing=east,part=4": {
+      "model": "rpsports:block/pullup_bar_4",
+      "y": 90
+    },
+    "facing=east,part=5": {
+      "model": "rpsports:block/pullup_bar_5",
+      "y": 90
+    },
+    "facing=south,part=0": {
+      "model": "rpsports:block/pullup_bar_0",
       "y": 180
     },
-    "facing=south,half=upper": {
-      "model": "rpsports:block/pullup_bar_top",
+    "facing=south,part=1": {
+      "model": "rpsports:block/pullup_bar_1",
       "y": 180
     },
-    "facing=west,half=lower": {
-      "model": "rpsports:block/pullup_bar_bottom",
+    "facing=south,part=2": {
+      "model": "rpsports:block/pullup_bar_2",
+      "y": 180
+    },
+    "facing=south,part=3": {
+      "model": "rpsports:block/pullup_bar_3",
+      "y": 180
+    },
+    "facing=south,part=4": {
+      "model": "rpsports:block/pullup_bar_4",
+      "y": 180
+    },
+    "facing=south,part=5": {
+      "model": "rpsports:block/pullup_bar_5",
+      "y": 180
+    },
+    "facing=west,part=0": {
+      "model": "rpsports:block/pullup_bar_0",
       "y": 270
     },
-    "facing=west,half=upper": {
-      "model": "rpsports:block/pullup_bar_top",
+    "facing=west,part=1": {
+      "model": "rpsports:block/pullup_bar_1",
+      "y": 270
+    },
+    "facing=west,part=2": {
+      "model": "rpsports:block/pullup_bar_2",
+      "y": 270
+    },
+    "facing=west,part=3": {
+      "model": "rpsports:block/pullup_bar_3",
+      "y": 270
+    },
+    "facing=west,part=4": {
+      "model": "rpsports:block/pullup_bar_4",
+      "y": 270
+    },
+    "facing=west,part=5": {
+      "model": "rpsports:block/pullup_bar_5",
       "y": 270
     }
   }

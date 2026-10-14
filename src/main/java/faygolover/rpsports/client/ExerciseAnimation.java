@@ -64,7 +64,7 @@ public final class ExerciseAnimation implements IAnimation {
         shownA += (a - shownA) * k;
         // У груши b — какой удар (не плавно), у остальных — плавно.
         shownB = exercise == Exercise.BAG.ordinal() || exercise == Exercise.DUMBBELL.ordinal() ? b : shownB + (b - shownB) * k;
-        if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (3f + 6f * shownA);
+        if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (4.5f + 8.5f * shownA);
         // Тело смотрит туда же, куда игрок поставлен (иначе оно «доворачивается» за головой).
         if (exercise >= 0 && exercise != Exercise.DUMBBELL.ordinal()) {
             player.yBodyRot = player.yBodyRotO = player.getYRot();
@@ -79,6 +79,7 @@ public final class ExerciseAnimation implements IAnimation {
 
     @Override
     public FirstPersonConfiguration getFirstPersonConfiguration(float tickDelta) {
+        if (shownB >= 2) return new FirstPersonConfiguration(true, true, true, true);
         return new FirstPersonConfiguration(!leftHand, leftHand, !leftHand, leftHand);
     }
 
@@ -146,8 +147,14 @@ public final class ExerciseAnimation implements IAnimation {
         }
     }
 
-    /** Гантель: подъём на бицепс рабочей рукой. */
+    /** Гантель: подъём на бицепс рабочей рукой; две гантели — обе руки (левая — из B: 2 + её подъём). */
     private Vec3f dumbbell(String part, boolean pos, Vec3f v, float A) {
+        if (shownB >= 2) {
+            float leftA = Math.max(0, Math.min(1, shownB - 2));
+            if (part.equals("rightArm")) return pos ? v : v3(-A * 1.9f, 0, 0.08f);
+            if (part.equals("leftArm")) return pos ? v : v3(-leftA * 1.9f, 0, -0.08f);
+            return v;
+        }
         String arm = leftHand ? "leftArm" : "rightArm";
         if (part.equals(arm)) return pos ? v : v3(-A * 1.9f, 0, leftHand ? -0.08f : 0.08f);
         return v;

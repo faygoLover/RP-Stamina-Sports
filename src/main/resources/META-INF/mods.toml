@@ -35,7 +35,7 @@ description='''${mod_description}'''
 [[dependencies.${mod_id}]]
     modId="rpstamina"
     mandatory=true
-    versionRange="[1.4,)"
+    versionRange="[1.4.1,)"
     ordering="AFTER"
     side="BOTH"
 

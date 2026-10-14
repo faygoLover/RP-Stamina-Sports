@@ -25,29 +25,31 @@ import org.jetbrains.annotations.Nullable;
  * Скамья со штангой. Гриф 20 кг; ПКМ с блином — повесить пару (по одному с каждой стороны), Shift+ПКМ пустой рукой —
  * снять последнюю пару. ПКМ — лечь и жать; если скамья занята — встать на страховку.
  */
-public class BenchBlock extends MachineBlock implements EntityBlock {
+public class BenchBlock extends MultiBlockMachine implements EntityBlock {
     public static final double BAR_KG = 20;
     public static final int MAX_PAIRS = 6;
 
-    public BenchBlock(Properties props, VoxelShape shape) {
-        super(props, shape, Exercise.BENCH);
+    /** Скамья в два блока: часть 0 — со стойкой и грифом (там же блины), часть 1 — под ноги. */
+    public BenchBlock(Properties props, VoxelShape head, VoxelShape foot) {
+        super(props, Exercise.BENCH, 2, 1, head, foot);
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new BenchBlockEntity(pos, state);
+        return state.getValue(PART) == 0 ? new BenchBlockEntity(pos, state) : null;
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
-        if (!(level.getBlockEntity(pos) instanceof BenchBlockEntity bench)) return InteractionResult.PASS;
+        BlockPos base = basePos(state, pos);
+        if (!(level.getBlockEntity(base) instanceof BenchBlockEntity bench)) return InteractionResult.PASS;
         ItemStack held = player.getMainHandItem();
         if (held.getItem() instanceof PlateItem plate) {
             if (level.isClientSide) return InteractionResult.SUCCESS;
-            if (SportsService.benchBusy(level, pos)) {
+            if (SportsService.benchBusy(level, base)) {
                 player.displayClientMessage(Component.translatable("rpsports.msg.bench_busy").withStyle(ChatFormatting.GRAY), true);
                 return InteractionResult.CONSUME;
             }
@@ -58,18 +60,18 @@ public class BenchBlock extends MachineBlock implements EntityBlock {
             }
             bench.addPair(plate.kg());
             if (!player.isCreative()) held.shrink(2);
-            level.playSound(null, pos, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.BLOCKS, 0.8f, 1.3f);
+            level.playSound(null, base, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.BLOCKS, 0.8f, 1.3f);
             showWeight(player, bench);
             return InteractionResult.CONSUME;
         }
         if (held.isEmpty() && player.isShiftKeyDown()) {
             if (level.isClientSide) return InteractionResult.SUCCESS;
-            if (SportsService.benchBusy(level, pos)) return InteractionResult.CONSUME;
+            if (SportsService.benchBusy(level, base)) return InteractionResult.CONSUME;
             Double kg = bench.removePair();
             if (kg != null) {
                 ItemStack back = PlateItem.stackFor(kg, 2);
                 if (!back.isEmpty() && !player.getInventory().add(back)) player.drop(back, false);
-                level.playSound(null, pos, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.BLOCKS, 0.8f, 1.0f);
+                level.playSound(null, base, SoundEvents.ARMOR_EQUIP_IRON, SoundSource.BLOCKS, 0.8f, 1.0f);
             }
             showWeight(player, bench);
             return InteractionResult.CONSUME;

@@ -29,6 +29,15 @@ final class Session {
     @Nullable Integer seatId;
     /** Плохое событие уже случилось — не повторять, ждать конца. */
     boolean failed;
+    /** Гантели в обеих руках: {@link #hand} — основная (правая), вторая — {@link #weightKg2}, {@link #ratio2}. */
+    boolean dual;
+    double weightKg2, ratio2;
+    /** Какой рукой был последний повтор (у двух гантелей) и когда — по каждой руке (0 — основная, 1 — вторая). */
+    InteractionHand lastHand = InteractionHand.MAIN_HAND;
+    final long[] lastRepHand = new long[2];
+    /** Серия удачных подряд, лучшая серия и объём подхода (повторы × вес) — для рекордов. */
+    int series, bestSeries;
+    double volume;
     /** Точка, где игрок стоит всё упражнение (null — может ходить: гантели; или сидит на сиденье: скамья). */
     @Nullable net.minecraft.world.phys.Vec3 anchor;
     float yaw;
@@ -47,6 +56,11 @@ final class Session {
         this.onMat = onMat;
         this.clothing = clothing;
         this.heavy = heavy;
+    }
+
+    /** Рабочая рука гантели сейчас. */
+    InteractionHand workHand() {
+        return dual ? lastHand : hand;
     }
 
     /** Броня и одежда не для спорта: множитель трат выносливости и усталости. */

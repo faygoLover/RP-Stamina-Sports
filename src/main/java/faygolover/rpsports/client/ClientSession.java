@@ -55,7 +55,7 @@ public final class ClientSession {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             ExerciseAnimations.local(mc.player, e.ordinal(), 0, 0);
-            mc.player.displayClientMessage(Component.translatable("rpsports.ui.hint_exit"), true);
+            mc.gui.setOverlayMessage(Component.empty(), false);
         }
     }
 
@@ -117,7 +117,7 @@ public final class ClientSession {
         // Присесть (Shift) на тренажёре нельзя — и спешиться со скамьи тоже: выход только Ctrl.
         if (locksMovement() && mc.options.keyShift.matches(key, 0)) return !release;
         if (!game.owns(key)) return false;
-        game.key(key, action);
+        game.keyEvent(key, action);
         return !release;
     }
 
@@ -125,7 +125,7 @@ public final class ClientSession {
     public static boolean onMouse(int button, int action) {
         if (game == null || Minecraft.getInstance().screen != null || action != GLFW.GLFW_PRESS) return false;
         if (game.ownsMouse()) {
-            game.mouse(button);
+            game.mouseEvent(button);
             return true;
         }
         return game.exercise() != Exercise.DUMBBELL;
@@ -136,10 +136,9 @@ public final class ClientSession {
         return game != null && game.exercise() != Exercise.DUMBBELL;
     }
 
-    /** Первые 1,5 с — подсказка «Ctrl — закончить» поверх ванильной «Нажмите Shift, чтобы спешиться». */
+    /** Первые 1,5 с — убрать ванильную подсказку «Нажмите Shift, чтобы спешиться» (выход — Ctrl). */
     static void tickHint() {
         if (game == null || game.elapsed() > 1.5f) return;
-        Minecraft mc = Minecraft.getInstance();
-        mc.gui.setOverlayMessage(Component.translatable("rpsports.ui.hint_exit"), false);
+        Minecraft.getInstance().gui.setOverlayMessage(Component.empty(), false);
     }
 }

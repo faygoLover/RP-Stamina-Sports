@@ -33,7 +33,7 @@ public class BagGame extends Minigame {
 
     private final List<Note> notes = new ArrayList<>();
     private float nextAt = 1.5f, lastPress = -1, punch;
-    private int series, punchLane = 1;
+    private int punchLane = 1;
 
     public BagGame(SportsNet.Open p) {
         super(p);
@@ -86,7 +86,6 @@ public class BagGame extends Minigame {
 
     private void fail(int hand) {
         rep(false, hand);
-        series = 0;
     }
 
     private void hit(int lane) {
@@ -106,7 +105,6 @@ public class BagGame extends Minigame {
         }
         best.done = true;
         rep(true, hand(lane));
-        series++;
     }
 
     @Override
@@ -148,27 +146,29 @@ public class BagGame extends Minigame {
         int lineY = y + FIELD_H - 6;
         float fall = fallTime(), w = window();
         String[] keys = {"Q", Component.translatable("rpsports.ui.lmb").getString(), Component.translatable("rpsports.ui.rmb").getString(), "E"};
+        int[] codes = {GLFW.GLFW_KEY_Q, -1, -2, GLFW.GLFW_KEY_E};
+        int half = Math.max(1, Math.round(w / fall * (FIELD_H - 6)));
         for (int l = 0; l < LANES; l++) {
             int lx = x0 + l * (LANE_W + GAP);
-            g.fill(lx, y, lx + LANE_W, y + FIELD_H, C_BG);
+            g.fill(lx + LANE_W / 2, y, lx + LANE_W / 2 + 1, lineY, Qte.GOLD_DIM);
             // Окно удара вокруг линии.
-            int half = Math.max(1, Math.round(w / fall * (FIELD_H - 6)));
-            g.fill(lx, lineY - half, lx + LANE_W, Math.min(y + FIELD_H, lineY + half), 0x404CB050);
-            g.fill(lx, lineY, lx + LANE_W, lineY + 1, C_ZONE);
-            if (punch > 0 && punchLane == l) g.renderOutline(lx - 1, y - 1, LANE_W + 2, FIELD_H + 2, 0xA0FFFFFF);
-            g.drawCenteredString(font, keys[l], lx + LANE_W / 2, y + FIELD_H + 2, hand(l) == 0 ? C_FILL : C_TIME);
+            g.fill(lx + 2, lineY - half, lx + LANE_W - 2, Math.min(y + FIELD_H, lineY + half), 0x40E8C34A);
+            g.fill(lx + 1, lineY, lx + LANE_W - 1, lineY + 1, Qte.GOLD);
         }
         for (Note n : notes) {
             if (n.done) continue;
             float k = (n.at - time) / fall; // 1 — наверху, 0 — на линии
-            int ny = Math.round(lineY - k * (FIELD_H - 6));
+            float ny = lineY - k * (FIELD_H - 6);
             if (ny < y || ny > y + FIELD_H) continue;
-            int lx = x0 + n.lane * (LANE_W + GAP);
-            int c = hand(n.lane) == 0 ? C_FILL : C_TIME;
-            g.fill(lx + 2, Math.max(y, ny - 2), lx + LANE_W - 2, Math.min(y + FIELD_H, ny + 2), c);
+            float lx = x0 + n.lane * (LANE_W + GAP) + LANE_W / 2f;
+            Qte.disk(g, lx, ny, 7, hand(n.lane) == 0 ? Qte.GOLD : Qte.WHITE);
         }
-        flashFrame(g, x0, y, total, FIELD_H);
-        label(g, font, Component.translatable("rpsports.ui.bag", series), x, y + FIELD_H + 12);
-        return FIELD_H + 21;
+        for (int l = 0; l < LANES; l++) {
+            float lx = x0 + l * (LANE_W + GAP) + LANE_W / 2f;
+            boolean hit = punch > 0 && punchLane == l;
+            Qte.key(g, font, lx, y + FIELD_H + 6, 7.5f, keys[l], press(codes[l]), true);
+            if (hit && flash != 0) Qte.arc(g, lx, y + FIELD_H + 6, 9, 1, 0, 1, flashColor(Qte.GOLD));
+        }
+        return FIELD_H + 15;
     }
 }

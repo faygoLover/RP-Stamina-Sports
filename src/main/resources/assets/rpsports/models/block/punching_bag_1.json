@@ -1,5 +1,6 @@
 {
   "parent": "minecraft:block/block",
+  "ambientocclusion": false,
   "textures": {
     "bag": "minecraft:block/red_wool",
     "rod": "minecraft:block/gray_concrete",
@@ -9,12 +10,12 @@
     {
       "from": [
         4,
-        1,
+        0,
         4
       ],
       "to": [
         12,
-        14,
+        12,
         12
       ],
       "faces": {
@@ -41,12 +42,12 @@
     {
       "from": [
         5,
-        0,
+        12,
         5
       ],
       "to": [
         11,
-        1,
+        13,
         11
       ],
       "faces": {
@@ -73,7 +74,7 @@
     {
       "from": [
         7.5,
-        14,
+        13,
         7.5
       ],
       "to": [
