@@ -17,6 +17,8 @@ import faygolover.rpsports.network.SportsNet;
 import faygolover.rpsports.registry.SportsRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import faygolover.rpsports.block.MachineBlock;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -185,18 +187,94 @@ public final class SportsService {
         Session s = new Session(e, pos, hand, kg, ratio, str, fit, ease, program, onMat, clothing, heavy);
         s.started = sp.level().getGameTime();
         s.lastRep = s.started;
-        if (e == Exercise.BENCH && pos != null) {
-            SeatEntity seat = SeatEntity.create(sp.level(), pos.getX() + 0.5, pos.getY() + 0.25, pos.getZ() + 0.5);
-            sp.level().addFreshEntity(seat);
-            sp.startRiding(seat, true);
-            s.seatId = seat.getId();
-        }
+        place(sp, s);
         SESSIONS.put(sp.getUUID(), s);
         SportsNet.send(sp, new SportsNet.Open(e.ordinal(), (float) ratio, str, fit, (float) ease, (float) kg,
                 hand == InteractionHand.MAIN_HAND ? 0 : 1, program));
         if (ratio > 1.4 && e.weighted())
             sp.displayClientMessage(Component.translatable("rpsports.msg.too_heavy").withStyle(ChatFormatting.GOLD), true);
         SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), e.ordinal(), 0, 0));
+    }
+
+    /**
+     * Поставить игрока на место упражнения и повернуть как надо; дальше он стоит там, пока не закончит:
+     * <ul>
+     *   <li>скамья — сидит на невидимом сиденье на подушке, ногами от стойки (голова под грифом);</li>
+     *   <li>турник — под перекладиной, лицом туда, откуда его ставили; дорожка — на ленте лицом к поручню;</li>
+     *   <li>груша — на блок перед ней, лицом к ней; без снаряда — где стоял;</li>
+     *   <li>гантели — ходить можно.</li>
+     * </ul>
+     */
+    private static void place(ServerPlayer sp, Session s) {
+        if (s.exercise == Exercise.DUMBBELL) return;
+        Level level = sp.level();
+        BlockPos pos = s.pos;
+        Direction facing = pos != null && level.getBlockState(pos).hasProperty(MachineBlock.FACING)
+                ? level.getBlockState(pos).getValue(MachineBlock.FACING) : null;
+        double x = sp.getX(), y = sp.getY(), z = sp.getZ();
+        float yaw = sp.getYRot();
+        if (pos != null && facing != null) {
+            double cx = pos.getX() + 0.5, cz = pos.getZ() + 0.5;
+            switch (s.exercise) {
+                case BENCH -> {
+                    // Стойка с грифом — с «левой» стороны модели; ноги — в другую сторону.
+                    Direction feet = facing.getClockWise();
+                    x = cx + feet.getStepX() * BENCH_SHIFT;
+                    z = cz + feet.getStepZ() * BENCH_SHIFT;
+                    yaw = feet.toYRot();
+                }
+                case PULLUP -> {
+                    x = cx;
+                    z = cz;
+                    y = pos.getY();
+                    yaw = facing.toYRot();
+                }
+                case TREADMILL -> {
+                    x = cx;
+                    z = cz;
+                    y = pos.getY() + 3 / 16.0;
+                    yaw = facing.toYRot();
+                }
+                case BAG -> {
+                    BlockPos spot = pos.relative(facing);
+                    if (level.getBlockState(spot).getCollisionShape(level, spot).isEmpty()
+                            && level.getBlockState(spot.above()).getCollisionShape(level, spot.above()).isEmpty()) {
+                        x = spot.getX() + 0.5;
+                        z = spot.getZ() + 0.5;
+                        y = pos.getY();
+                    }
+                    yaw = facing.getOpposite().toYRot();
+                }
+                default -> { }
+            }
+        }
+        s.yaw = yaw;
+        sp.connection.teleport(x, y, z, yaw, 0);
+        sp.setYHeadRot(yaw);
+        sp.setYBodyRot(yaw);
+        if (s.exercise == Exercise.BENCH && pos != null) {
+            SeatEntity seat = SeatEntity.create(level, x, pos.getY() + SEAT_Y, z);
+            seat.setYRot(yaw);
+            level.addFreshEntity(seat);
+            sp.startRiding(seat, true);
+            s.seatId = seat.getId();
+        } else {
+            s.anchor = new net.minecraft.world.phys.Vec3(x, y, z);
+        }
+    }
+
+    /** Скамья: насколько сиденье сдвинуто от центра к ногам (чтобы голова и плечи были под грифом). */
+    private static final double BENCH_SHIFT = 0.24;
+    /** Скамья: высота сиденья над блоком — спина ложится на подушку (верх подушки на 8/16). */
+    public static final double SEAT_Y = 0.267;
+
+    /** Каждый тик: держать игрока на месте упражнения (отбросило, толкнули — вернуть). */
+    public static void tick(ServerPlayer sp) {
+        Session s = SESSIONS.get(sp.getUUID());
+        if (s == null || s.anchor == null || s.failed) return;
+        if (sp.position().distanceToSqr(s.anchor) > 0.04)
+            sp.connection.teleport(s.anchor.x, s.anchor.y, s.anchor.z, sp.getYRot(), sp.getXRot());
+        if (sp.isShiftKeyDown()) sp.setShiftKeyDown(false);
     }
 
     // ------------------------------------------------------------------ повтор
@@ -206,7 +284,9 @@ public final class SportsService {
         SportsData d = SportsData.get(sp);
         if (s == null || d == null || s.failed) return;
         long now = sp.level().getGameTime();
-        double minTicks = s.exercise.repSeconds * 20 * (s.exercise == Exercise.TREADMILL ? 0.8 : 0.35);
+        // Груша: удары идут нотами (иногда «двойкой») — между ударами не меньше 3 тиков.
+        double minTicks = s.exercise == Exercise.BAG ? 3
+                : s.exercise.repSeconds * 20 * (s.exercise == Exercise.TREADMILL ? 0.8 : 0.35);
         if (now - s.lastRep < minTicks) return; // слишком часто — не считаем (макросы)
         s.lastRep = now;
         var cfg = SportsConfig.EXERCISES.get(s.exercise);

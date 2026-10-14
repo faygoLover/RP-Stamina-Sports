@@ -12,6 +12,13 @@
       "conditions": [
         {
           "condition": "minecraft:survives_explosion"
+        },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "rpsports:pullup_bar",
+          "properties": {
+            "half": "lower"
+          }
         }
       ]
     }

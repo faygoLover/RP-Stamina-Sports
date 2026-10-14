@@ -3,7 +3,6 @@
   "key.categories.rpsports": "RP Спорт",
   "key.rpsports.exercises": "Упражнения без снаряда",
   "hud.rpsports.minigame": "Спорт: мини-игра",
-
   "block.rpsports.bench": "Скамья со штангой",
   "block.rpsports.pullup_bar": "Турник",
   "block.rpsports.punching_bag": "Боксёрская груша",
@@ -21,10 +20,8 @@
   "item.rpsports.plate_20": "Блин 20 кг",
   "entity.rpsports.seat": "Сиденье",
   "effect.rpsports.muscle_pain": "Боль в мышцах",
-
   "rpsports.tip.dumbbell": "%s кг. ПКМ — подъёмы на бицепс, держать E",
   "rpsports.tip.plate": "%s кг. Вешается парой: ПКМ по скамье",
-
   "rpsports.exercise.bench": "Жим лёжа",
   "rpsports.exercise.dumbbell": "Гантели",
   "rpsports.exercise.pullup": "Подтягивания",
@@ -33,17 +30,14 @@
   "rpsports.exercise.pushup": "Отжимания",
   "rpsports.exercise.squat": "Приседания",
   "rpsports.exercise.situp": "Пресс",
-
   "rpsports.zone.left_arm": "Левая рука",
   "rpsports.zone.right_arm": "Правая рука",
   "rpsports.zone.chest": "Грудь и спина",
   "rpsports.zone.abs": "Пресс",
   "rpsports.zone.legs": "Ноги",
-
   "rpsports.program.0": "Ходьба",
   "rpsports.program.1": "Интервалы",
   "rpsports.program.2": "Бег",
-
   "rpsports.sense.tired.left_arm": "Левая рука устала",
   "rpsports.sense.tired.right_arm": "Правая рука устала",
   "rpsports.sense.tired.chest": "Грудь и спина устали",
@@ -56,7 +50,6 @@
   "rpsports.sense.pain.legs": "Ноги горят",
   "rpsports.sense.strain": "Что-то потянул — резкая боль в мышце",
   "rpsports.sense.tear": "Рвущая боль — мышца не выдержала",
-
   "rpsports.bad.bench": "Штанга придавила! Не встать…",
   "rpsports.bad.dumbbell": "Гантель выскользнула — прямо на ногу!",
   "rpsports.bad.pullup": "Сорвался с турника",
@@ -65,7 +58,6 @@
   "rpsports.bad.pushup": "Руки подогнулись — носом в пол",
   "rpsports.bad.squat": "Ноги подкосились — сел на пол",
   "rpsports.bad.situp": "Живот свело",
-
   "rpsports.msg.bar_weight": "На грифе: %s кг",
   "rpsports.msg.bar_full": "На гриф больше не повесить",
   "rpsports.msg.need_pair": "Блины вешаются парой — нужно два",
@@ -82,7 +74,6 @@
   "rpsports.msg.program": "Программа: %s",
   "rpsports.msg.too_heavy": "Слишком тяжело — почти не поднять",
   "rpsports.msg.walked_away": "Упражнение прервано",
-
   "rpsports.ui.hint_exit": "Ctrl — закончить",
   "rpsports.ui.reps": "Повторы: %s",
   "rpsports.ui.bench": "Повторы: %s   %s кг",
@@ -93,11 +84,20 @@
   "rpsports.ui.bag.right": "ПРАВОЙ",
   "rpsports.ui.bag.double": "ДВОЙКА",
   "rpsports.ui.treadmill": "Отрезок %s/%s",
-  "rpsports.ui.up": "вверх",
-  "rpsports.ui.down": "вниз",
-
+  "rpsports.ui.up": "▲ вверх",
+  "rpsports.ui.down": "▼ вниз",
   "rpsports.cmd.status": "Мышцы — %s:",
   "rpsports.cmd.rested": "%s: мышцы отдохнули",
   "rpsports.help.status": "силы зон мышц игрока (скрыты от него)",
-  "rpsports.help.rest": "снять усталость мышц"
+  "rpsports.help.rest": "снять усталость мышц",
+  "rpsports.ui.lmb": "ЛКМ",
+  "rpsports.ui.rmb": "ПКМ",
+  "rpsports.hint.bench": "Часто жми E — жать · Ctrl — на стойку",
+  "rpsports.hint.dumbbell": "Держи E, отпусти в зелёной зоне · Ctrl — хватит",
+  "rpsports.hint.pullup": "Жми показанную клавишу (Q или E), когда кольцо в зелёной зоне · Ctrl — спрыгнуть",
+  "rpsports.hint.bag": "Бей, когда ячейка на линии: Q, ЛКМ, ПКМ, E · Ctrl — отойти",
+  "rpsports.hint.treadmill": "Шаги по очереди: ЛКМ/ПКМ или Q/E, держи ползунок в зелёной зоне · Ctrl — сойти",
+  "rpsports.hint.pushup": "E, когда ползунок в зелёной зоне · Ctrl — встать",
+  "rpsports.hint.squat": "Держи E — вниз, отпусти — вверх; A/D — равновесие · Ctrl — хватит",
+  "rpsports.hint.situp": "Жми клавиши по порядку · Ctrl — хватит"
 }

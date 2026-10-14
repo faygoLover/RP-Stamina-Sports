@@ -3,7 +3,6 @@
   "key.categories.rpsports": "RP Sports",
   "key.rpsports.exercises": "Bodyweight exercises",
   "hud.rpsports.minigame": "Sports: minigame",
-
   "block.rpsports.bench": "Bench Press",
   "block.rpsports.pullup_bar": "Pull-up Bar",
   "block.rpsports.punching_bag": "Punching Bag",
@@ -21,10 +20,8 @@
   "item.rpsports.plate_20": "Plate 20 kg",
   "entity.rpsports.seat": "Seat",
   "effect.rpsports.muscle_pain": "Muscle Pain",
-
   "rpsports.tip.dumbbell": "%s kg. RMB — biceps curls, hold E",
   "rpsports.tip.plate": "%s kg. Hung in pairs: RMB on a bench",
-
   "rpsports.exercise.bench": "Bench press",
   "rpsports.exercise.dumbbell": "Dumbbells",
   "rpsports.exercise.pullup": "Pull-ups",
@@ -33,17 +30,14 @@
   "rpsports.exercise.pushup": "Push-ups",
   "rpsports.exercise.squat": "Squats",
   "rpsports.exercise.situp": "Sit-ups",
-
   "rpsports.zone.left_arm": "Left arm",
   "rpsports.zone.right_arm": "Right arm",
   "rpsports.zone.chest": "Chest and back",
   "rpsports.zone.abs": "Abs",
   "rpsports.zone.legs": "Legs",
-
   "rpsports.program.0": "Walk",
   "rpsports.program.1": "Intervals",
   "rpsports.program.2": "Run",
-
   "rpsports.sense.tired.left_arm": "Your left arm is tired",
   "rpsports.sense.tired.right_arm": "Your right arm is tired",
   "rpsports.sense.tired.chest": "Your chest and back are tired",
@@ -56,7 +50,6 @@
   "rpsports.sense.pain.legs": "Your legs burn",
   "rpsports.sense.strain": "You pulled something — sharp muscle pain",
   "rpsports.sense.tear": "A tearing pain — the muscle gave out",
-
   "rpsports.bad.bench": "The bar pinned you! Can't get up…",
   "rpsports.bad.dumbbell": "The dumbbell slipped — right onto your foot!",
   "rpsports.bad.pullup": "You fell off the bar",
@@ -65,7 +58,6 @@
   "rpsports.bad.pushup": "Your arms gave way — face into the floor",
   "rpsports.bad.squat": "Your legs buckled — you sat down",
   "rpsports.bad.situp": "Stomach cramp",
-
   "rpsports.msg.bar_weight": "On the bar: %s kg",
   "rpsports.msg.bar_full": "The bar is full",
   "rpsports.msg.need_pair": "Plates go on in pairs — you need two",
@@ -82,7 +74,6 @@
   "rpsports.msg.program": "Program: %s",
   "rpsports.msg.too_heavy": "Too heavy — you can barely lift it",
   "rpsports.msg.walked_away": "Exercise interrupted",
-
   "rpsports.ui.hint_exit": "Ctrl — finish",
   "rpsports.ui.reps": "Reps: %s",
   "rpsports.ui.bench": "Reps: %s   %s kg",
@@ -93,11 +84,20 @@
   "rpsports.ui.bag.right": "RIGHT",
   "rpsports.ui.bag.double": "ONE-TWO",
   "rpsports.ui.treadmill": "Segment %s/%s",
-  "rpsports.ui.up": "up",
-  "rpsports.ui.down": "down",
-
+  "rpsports.ui.up": "▲ up",
+  "rpsports.ui.down": "▼ down",
   "rpsports.cmd.status": "Muscles — %s:",
   "rpsports.cmd.rested": "%s: muscles rested",
   "rpsports.help.status": "player's muscle zone strength (hidden from them)",
-  "rpsports.help.rest": "clear muscle fatigue"
+  "rpsports.help.rest": "clear muscle fatigue",
+  "rpsports.ui.lmb": "LMB",
+  "rpsports.ui.rmb": "RMB",
+  "rpsports.hint.bench": "Tap E fast to press · Ctrl — rack the bar",
+  "rpsports.hint.dumbbell": "Hold E, release in the green zone · Ctrl — stop",
+  "rpsports.hint.pullup": "Press the shown key (Q or E) while the ring is in the green zone · Ctrl — drop off",
+  "rpsports.hint.bag": "Hit when a cell reaches the line: Q, LMB, RMB, E · Ctrl — step back",
+  "rpsports.hint.treadmill": "Alternate steps: LMB/RMB or Q/E, keep the slider in the green zone · Ctrl — step off",
+  "rpsports.hint.pushup": "E when the slider is in the green zone · Ctrl — get up",
+  "rpsports.hint.squat": "Hold E — down, release — up; A/D — balance · Ctrl — stop",
+  "rpsports.hint.situp": "Press the keys in order · Ctrl — stop"
 }

@@ -29,6 +29,9 @@ final class Session {
     @Nullable Integer seatId;
     /** Плохое событие уже случилось — не повторять, ждать конца. */
     boolean failed;
+    /** Точка, где игрок стоит всё упражнение (null — может ходить: гантели; или сидит на сиденье: скамья). */
+    @Nullable net.minecraft.world.phys.Vec3 anchor;
+    float yaw;
 
     Session(Exercise exercise, @Nullable BlockPos pos, InteractionHand hand, double weightKg, double ratio, int strength,
             int fitness, double ease, int program, boolean onMat, int clothing, int heavy) {

@@ -1,18 +1,33 @@
 {
   "variants": {
-    "facing=north": {
-      "model": "rpsports:block/pullup_bar"
+    "facing=north,half=lower": {
+      "model": "rpsports:block/pullup_bar_bottom"
     },
-    "facing=east": {
-      "model": "rpsports:block/pullup_bar",
+    "facing=north,half=upper": {
+      "model": "rpsports:block/pullup_bar_top"
+    },
+    "facing=east,half=lower": {
+      "model": "rpsports:block/pullup_bar_bottom",
       "y": 90
     },
-    "facing=south": {
-      "model": "rpsports:block/pullup_bar",
+    "facing=east,half=upper": {
+      "model": "rpsports:block/pullup_bar_top",
+      "y": 90
+    },
+    "facing=south,half=lower": {
+      "model": "rpsports:block/pullup_bar_bottom",
       "y": 180
     },
-    "facing=west": {
-      "model": "rpsports:block/pullup_bar",
+    "facing=south,half=upper": {
+      "model": "rpsports:block/pullup_bar_top",
+      "y": 180
+    },
+    "facing=west,half=lower": {
+      "model": "rpsports:block/pullup_bar_bottom",
+      "y": 270
+    },
+    "facing=west,half=upper": {
+      "model": "rpsports:block/pullup_bar_top",
       "y": 270
     }
   }

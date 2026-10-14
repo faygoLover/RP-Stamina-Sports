@@ -50,6 +50,7 @@ public final class ClientSession {
         };
         stopSent = false;
         lastTick = -1;
+        net.minecraft.client.KeyMapping.releaseAll();
         CameraControl.start(e);
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
@@ -67,6 +68,7 @@ public final class ClientSession {
     }
 
     public static void stopped(String reason) {
+        if (game != null) net.minecraft.client.KeyMapping.releaseAll();
         game = null;
         CameraControl.stop();
         Minecraft mc = Minecraft.getInstance();
@@ -98,28 +100,46 @@ public final class ClientSession {
         }
     }
 
-    /** Клавиатура (из миксина KeyboardHandler, до назначений игры): true — съели. */
+    /**
+     * Клавиатура (из миксина KeyboardHandler, до назначений игры): true — съели. Съедаем только нажатия и повторы
+     * своих клавиш; отпускания всегда пропускаем дальше — иначе игра считает клавишу зажатой и после упражнения.
+     */
     public static boolean onKey(int key, int action) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen != null) return false;
-        if (ExerciseSelector.onKey(key, action)) return true;
+        if (ExerciseSelector.onKey(key, action)) return action != GLFW.GLFW_RELEASE;
         if (game == null) return false;
+        boolean release = action == GLFW.GLFW_RELEASE;
         if (key == GLFW.GLFW_KEY_LEFT_CONTROL || key == GLFW.GLFW_KEY_RIGHT_CONTROL) {
             if (action == GLFW.GLFW_PRESS) requestStop();
-            return true;
+            return !release;
         }
+        // Присесть (Shift) на тренажёре нельзя — и спешиться со скамьи тоже: выход только Ctrl.
+        if (locksMovement() && mc.options.keyShift.matches(key, 0)) return !release;
         if (!game.owns(key)) return false;
         game.key(key, action);
-        return true;
+        return !release;
     }
 
-    /** Кнопка мыши: true — съели (груша, дорожка; у остальных — не дать ударить или использовать предмет). */
+    /** Кнопка мыши: true — съели (только нажатие; отпускание всегда идёт в игру, чтобы кнопка не «залипла»). */
     public static boolean onMouse(int button, int action) {
-        if (game == null || Minecraft.getInstance().screen != null) return false;
+        if (game == null || Minecraft.getInstance().screen != null || action != GLFW.GLFW_PRESS) return false;
         if (game.ownsMouse()) {
-            if (action == GLFW.GLFW_PRESS) game.mouse(button);
+            game.mouse(button);
             return true;
         }
         return game.exercise() != Exercise.DUMBBELL;
+    }
+
+    /** На тренажёре и в упражнениях без снаряда игрок стоит на месте; с гантелями можно ходить. */
+    public static boolean locksMovement() {
+        return game != null && game.exercise() != Exercise.DUMBBELL;
+    }
+
+    /** Первые 1,5 с — подсказка «Ctrl — закончить» поверх ванильной «Нажмите Shift, чтобы спешиться». */
+    static void tickHint() {
+        if (game == null || game.elapsed() > 1.5f) return;
+        Minecraft mc = Minecraft.getInstance();
+        mc.gui.setOverlayMessage(Component.translatable("rpsports.ui.hint_exit"), false);
     }
 }

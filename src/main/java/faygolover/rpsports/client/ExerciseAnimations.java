@@ -44,7 +44,7 @@ public final class ExerciseAnimations {
     private static final class Lib {
         static void register() {
             dev.kosmx.playerAnim.minecraftApi.PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(LAYER, 1000,
-                    player -> new ExerciseAnimation());
+                    ExerciseAnimation::new);
         }
 
         static void set(AbstractClientPlayer p, int exercise, float a, float b, boolean leftHand) {

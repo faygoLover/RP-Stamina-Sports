@@ -83,8 +83,9 @@ public class RpSports {
     }
 
     private void onPlayerTick(TickEvent.PlayerTickEvent e) {
-        if (e.phase != TickEvent.Phase.END || !(e.player instanceof ServerPlayer sp) || sp.tickCount % 20 != 0) return;
-        SportsService.secondTick(sp);
+        if (e.phase != TickEvent.Phase.END || !(e.player instanceof ServerPlayer sp)) return;
+        SportsService.tick(sp);
+        if (sp.tickCount % 20 == 0) SportsService.secondTick(sp);
     }
 
     private void onClone(PlayerEvent.Clone e) {

@@ -49,6 +49,8 @@ minecraft {
         client {
             property 'forge.enabledGameTestNamespaces', mod_id
             if (project.hasProperty('username')) args '--username', project.property('username')
+            // Сразу в тестовый мир (scripts/make_test_world.py): -Pworld="RP Sports test"
+            if (project.hasProperty('world')) args '--quickPlaySingleplayer', project.property('world')
         }
 
         server {

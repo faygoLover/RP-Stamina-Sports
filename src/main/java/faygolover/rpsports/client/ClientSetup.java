@@ -40,6 +40,7 @@ public final class ClientSetup {
         bus.addListener(EventPriority.HIGHEST, ClientSetup::onMouse);
         bus.addListener(EventPriority.HIGHEST, ClientSetup::onInteraction);
         bus.addListener(ClientSetup::onOverlay);
+        bus.addListener(ClientSetup::onMovement);
         bus.addListener(ClientSetup::onLogout);
     }
 
@@ -68,6 +69,7 @@ public final class ClientSetup {
     private static void onClientTick(TickEvent.ClientTickEvent e) {
         if (e.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
+        ClientSession.tickHint();
         while (EXERCISES.consumeClick()) {
             if (mc.player != null && mc.screen == null) ExerciseSelector.toggle();
         }
@@ -84,6 +86,17 @@ public final class ClientSetup {
         if (ClientSession.game().exercise() == faygolover.rpsports.core.Exercise.DUMBBELL) return;
         e.setCanceled(true);
         e.setSwingHand(false);
+    }
+
+    /** На тренажёре и в упражнениях без снаряда — стоять на месте: ни шагов, ни прыжка, ни приседа. */
+    private static void onMovement(net.minecraftforge.client.event.MovementInputUpdateEvent e) {
+        if (!ClientSession.locksMovement()) return;
+        var in = e.getInput();
+        in.forwardImpulse = 0;
+        in.leftImpulse = 0;
+        in.up = in.down = in.left = in.right = false;
+        in.jumping = false;
+        in.shiftKeyDown = false;
     }
 
     /** Выбор упражнений без снаряда — под прицелом. */

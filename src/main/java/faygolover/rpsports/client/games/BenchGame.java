@@ -8,12 +8,12 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Штанга: долбить E, шкала подъёма растёт (от Силы и веса) и медленно пустеет; вторая полоска — время на это
- * поднятие. Не успел — ошибка. С каждым поднятием труднее. После поднятия штанга плавно опускается.
+ * Штанга: долбить E, шкала подъёма растёт (от Силы и веса) и пустеет; вторая полоска — время на это поднятие. Не
+ * успел — ошибка. С каждым поднятием труднее. После поднятия штанга плавно опускается.
  */
 public class BenchGame extends Minigame {
     private static final float REP_TIME = 4.0f, LOWER_TIME = 1.0f;
-    private float fill, left = REP_TIME, lower;
+    private float fill, shown, left = REP_TIME, lower;
     private int lifted;
 
     public BenchGame(SportsNet.Open p) {
@@ -22,11 +22,11 @@ public class BenchGame extends Minigame {
 
     private float perPress() {
         float r = Math.max(0.3f, params.ratio());
-        return 0.09f * strengthEase() / (float) Math.pow(r, 0.8) * (tremble ? 0.7f : 1f);
+        return 0.055f * strengthEase() / (float) Math.pow(r, 0.8) * (tremble ? 0.75f : 1f);
     }
 
     private float drain() {
-        return 0.22f * (1 + 0.05f * lifted);
+        return 0.26f * (1 + 0.05f * lifted);
     }
 
     @Override
@@ -38,35 +38,38 @@ public class BenchGame extends Minigame {
                 fill = 0;
                 left = REP_TIME;
             }
-            return;
+        } else {
+            fill = Math.max(0, fill - drain() * dt);
+            left -= dt;
+            if (left <= 0) {
+                rep(false, 0);
+                lifted++;
+                lower = LOWER_TIME;
+            }
         }
-        fill = Math.max(0, fill - drain() * dt);
-        left -= dt;
-        if (left <= 0) {
-            rep(false, 0);
+        shown = approach(shown, fill, dt, 18);
+    }
+
+    @Override
+    public boolean owns(int key) {
+        return key == GLFW.GLFW_KEY_E;
+    }
+
+    @Override
+    public void key(int key, int action) {
+        if (key != GLFW.GLFW_KEY_E || action != GLFW.GLFW_PRESS || lower > 0) return;
+        fill += perPress();
+        if (fill >= 1) {
+            fill = 1;
+            rep(true, 0);
             lifted++;
             lower = LOWER_TIME;
         }
     }
 
     @Override
-    public boolean key(int key, int action) {
-        if (key != GLFW.GLFW_KEY_E) return owns(key);
-        if (action == GLFW.GLFW_PRESS && lower <= 0) {
-            fill += perPress();
-            if (fill >= 1) {
-                fill = 1;
-                rep(true, 0);
-                lifted++;
-                lower = LOWER_TIME;
-            }
-        }
-        return true;
-    }
-
-    @Override
     public float poseA() {
-        return fill;
+        return shown;
     }
 
     @Override
@@ -75,11 +78,11 @@ public class BenchGame extends Minigame {
     }
 
     @Override
-    public void render(GuiGraphics g, Font font, int x, int y) {
-        int j = jitter();
-        bar(g, x + j, y, W, 8, fill, C_FILL);
+    protected int draw(GuiGraphics g, Font font, int x, int y) {
+        bar(g, x, y, W, 8, shown, C_FILL);
         bar(g, x, y + 9, W, 3, lower > 0 ? 0 : left / REP_TIME, C_TIME);
         flashFrame(g, x, y, W, 12);
         label(g, font, Component.translatable("rpsports.ui.bench", reps, PlateItem.format(params.weightKg())), x, y + 15);
+        return 24;
     }
 }

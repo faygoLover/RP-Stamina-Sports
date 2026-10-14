@@ -4,6 +4,7 @@ import faygolover.rpsports.RpSports;
 import faygolover.rpsports.block.BenchBlock;
 import faygolover.rpsports.block.BenchBlockEntity;
 import faygolover.rpsports.block.MachineBlock;
+import faygolover.rpsports.block.PullupBarBlock;
 import faygolover.rpsports.core.Exercise;
 import faygolover.rpsports.entity.SeatEntity;
 import faygolover.rpsports.item.DumbbellItem;
@@ -56,7 +57,7 @@ public final class SportsRegistry {
     private static final VoxelShape MAT_SHAPE = Block.box(0, 0, 0, 16, 1, 16);
 
     public static final RegistryObject<Block> BENCH = BLOCKS.register("bench", () -> new BenchBlock(metal(), BENCH_SHAPE));
-    public static final RegistryObject<Block> PULLUP_BAR = BLOCKS.register("pullup_bar", () -> new MachineBlock(metal(), PULLUP_SHAPE, Exercise.PULLUP));
+    public static final RegistryObject<Block> PULLUP_BAR = BLOCKS.register("pullup_bar", () -> new PullupBarBlock(metal(), PULLUP_SHAPE, PULLUP_SHAPE));
     public static final RegistryObject<Block> PUNCHING_BAG = BLOCKS.register("punching_bag",
             () -> new MachineBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(1f).sound(SoundType.WOOL).noOcclusion(),
                     BAG_SHAPE, Exercise.BAG));

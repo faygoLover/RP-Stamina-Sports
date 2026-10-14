@@ -8,7 +8,8 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * Гантели — как мешок Амбу: держать E, полоска растёт; отпустить в зелёной зоне. Зона всегда на одном месте, чем
- * тяжелее гантель относительно Силы — тем уже. Отпустил вне зоны (или перетянул) — ошибка. Ходить можно.
+ * тяжелее гантель относительно Силы — тем уже. Отпустил вне зоны (или перетянул) — ошибка. Ходить можно. Дрожь —
+ * полоска растёт неровно (плавно то быстрее, то медленнее).
  */
 public class DumbbellGame extends Minigame {
     private static final float ZONE_START = 0.7f, SPEED = 0.75f, DOWN_TIME = 0.6f;
@@ -33,8 +34,8 @@ public class DumbbellGame extends Minigame {
             return;
         }
         if (holding) {
-            float jit = tremble ? (random.nextFloat() - 0.5f) * 0.6f : 0;
-            fill += dt * SPEED * (1 + jit);
+            float uneven = tremble ? 0.45f * wobble(4.5f) : 0;
+            fill += dt * SPEED * (1 + uneven);
             if (fill > 1) {
                 holding = false;
                 rep(false, 0);
@@ -44,9 +45,13 @@ public class DumbbellGame extends Minigame {
     }
 
     @Override
-    public boolean key(int key, int action) {
-        if (key != GLFW.GLFW_KEY_E) return owns(key);
-        if (down > 0) return true;
+    public boolean owns(int key) {
+        return key == GLFW.GLFW_KEY_E;
+    }
+
+    @Override
+    public void key(int key, int action) {
+        if (key != GLFW.GLFW_KEY_E || down > 0) return;
         if (action == GLFW.GLFW_PRESS) holding = true;
         else if (action == GLFW.GLFW_RELEASE && holding) {
             holding = false;
@@ -54,12 +59,6 @@ public class DumbbellGame extends Minigame {
             rep(ok, 0);
             down = DOWN_TIME;
         }
-        return true;
-    }
-
-    @Override
-    public boolean owns(int key) {
-        return key == GLFW.GLFW_KEY_E;
     }
 
     @Override
@@ -74,11 +73,11 @@ public class DumbbellGame extends Minigame {
     }
 
     @Override
-    public void render(GuiGraphics g, Font font, int x, int y) {
-        int j = jitter();
-        bar(g, x + j, y, W, 8, fill, C_FILL);
+    protected int draw(GuiGraphics g, Font font, int x, int y) {
+        bar(g, x, y, W, 8, fill, C_FILL);
         zone(g, x, y, W, 8, ZONE_START, ZONE_START + zoneWidth());
         flashFrame(g, x, y, W, 8);
         label(g, font, Component.translatable("rpsports.ui.dumbbell", reps, (int) params.weightKg()), x, y + 11);
+        return 20;
     }
 }

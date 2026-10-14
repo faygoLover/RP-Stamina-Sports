@@ -34,7 +34,7 @@ public class SitupGame extends Minigame {
     @Override
     protected void update(float dt) {
         float target = seq.length == 0 ? 0 : (float) idx / seq.length;
-        curl += (target - curl) * Math.min(1, dt * 10);
+        curl = approach(curl, target, dt, 9);
         left -= dt;
         if (left <= 0) {
             rep(false, 0);
@@ -43,9 +43,14 @@ public class SitupGame extends Minigame {
     }
 
     @Override
-    public boolean key(int key, int action) {
-        if (!owns(key)) return false;
-        if (action != GLFW.GLFW_PRESS) return true;
+    public boolean owns(int key) {
+        for (int k : KEYS) if (k == key) return true;
+        return false;
+    }
+
+    @Override
+    public void key(int key, int action) {
+        if (!owns(key) || action != GLFW.GLFW_PRESS) return;
         if (key == KEYS[seq[idx]]) {
             idx++;
             if (idx >= seq.length) {
@@ -56,7 +61,6 @@ public class SitupGame extends Minigame {
             rep(false, 0);
             next();
         }
-        return true;
     }
 
     @Override
@@ -65,8 +69,8 @@ public class SitupGame extends Minigame {
     }
 
     @Override
-    public void render(GuiGraphics g, Font font, int x, int y) {
-        int step = 16, sx = x + (W - seq.length * step) / 2 + jitter();
+    protected int draw(GuiGraphics g, Font font, int x, int y) {
+        int step = 16, sx = x + (W - seq.length * step) / 2;
         for (int i = 0; i < seq.length; i++) {
             int c = i < idx ? C_ZONE : i == idx ? C_FILL : C_DIM;
             g.fill(sx + i * step, y, sx + i * step + 13, y + 11, C_BG);
@@ -75,5 +79,6 @@ public class SitupGame extends Minigame {
         bar(g, x, y + 13, W, 3, left / Math.max(0.1f, limit), C_TIME);
         flashFrame(g, x, y, W, 16);
         label(g, font, Component.translatable("rpsports.ui.reps", reps), x, y + 19);
+        return 28;
     }
 }

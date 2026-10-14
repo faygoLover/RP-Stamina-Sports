@@ -30,7 +30,7 @@ public final class SportsHud implements HudElement {
 
     @Override
     public int height() {
-        return 62;
+        return 76;
     }
 
     @Override

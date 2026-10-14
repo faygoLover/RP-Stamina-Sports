@@ -73,8 +73,16 @@ public class MachineBlock extends HorizontalDirectionalBlock {
     @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (exercise == null || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+        // С блоком в руке ПКМ ставит блок рядом, а не начинает упражнение.
+        if (player.getMainHandItem().getItem() instanceof net.minecraft.world.item.BlockItem) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
-        if (player instanceof ServerPlayer sp) SportsService.useMachine(sp, pos, state, exercise, player.isShiftKeyDown());
+        BlockPos base = basePos(state, pos);
+        if (player instanceof ServerPlayer sp) SportsService.useMachine(sp, base, level.getBlockState(base), exercise, player.isShiftKeyDown());
         return InteractionResult.CONSUME;
+    }
+
+    /** Блок, к которому привязано упражнение (у турника — нижняя половина). */
+    protected BlockPos basePos(BlockState state, BlockPos pos) {
+        return pos;
     }
 }

@@ -7,13 +7,16 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Отжимания: ритм. Пульсирует кружок-метроном; нажимать E в такт: одно нажатие — вниз, следующее — вверх, две
- * удачные половинки — повтор. Темп с каждым повтором чуть быстрее; мимо такта — ошибка, темп сначала.
+ * Отжимания: ритм. Ползунок идёт слева направо за один такт; в конце полосы — зелёное окно такта. Нажать E, когда
+ * ползунок в нём: одно нажатие — вниз, следующее — вверх, две удачные половинки — повтор. Темп с каждым повтором
+ * чуть быстрее; мимо такта (рано, поздно, пропустил) — ошибка, темп сначала.
  */
 public class PushupGame extends Minigame {
     private static final float START_PERIOD = 1.1f, MIN_PERIOD = 0.55f;
-    private float period = START_PERIOD, beat, down;
-    private boolean half, hitThisBeat;
+    private float period = START_PERIOD, clock, down;
+    /** Номер такта, на который уже нажали / который уже проверили на пропуск. */
+    private int lastHit, lastChecked;
+    private boolean half;
 
     public PushupGame(SportsNet.Open p) {
         super(p);
@@ -26,15 +29,13 @@ public class PushupGame extends Minigame {
 
     @Override
     protected void update(float dt) {
-        beat += dt;
-        float target = half ? 1 : 0;
-        down += (target - down) * Math.min(1, dt * 8);
-        if (beat >= period) {
-            if (!hitThisBeat && beat - period > window()) miss();
-            if (beat >= period * 1.5f) {
-                beat -= period;
-                hitThisBeat = false;
-            }
+        clock += dt;
+        down = approach(down, half ? 1 : 0, dt, 9);
+        // Такт n — в момент n·period; его окно кончилось, а нажатия не было — пропустил.
+        int ended = (int) Math.floor((clock - window()) / period);
+        if (ended >= 1 && ended > lastHit && ended > lastChecked) {
+            lastChecked = ended;
+            miss();
         }
     }
 
@@ -42,8 +43,9 @@ public class PushupGame extends Minigame {
         rep(false, 0);
         period = START_PERIOD;
         half = false;
-        beat = 0;
-        hitThisBeat = false;
+        clock = 0;
+        lastHit = 0;
+        lastChecked = 0;
     }
 
     @Override
@@ -52,23 +54,26 @@ public class PushupGame extends Minigame {
     }
 
     @Override
-    public boolean key(int key, int action) {
-        if (key != GLFW.GLFW_KEY_E) return false;
-        if (action != GLFW.GLFW_PRESS) return true;
-        float dist = Math.min(Math.abs(beat - period), Math.abs(beat));
-        if (dist > window() || hitThisBeat) {
+    public void key(int key, int action) {
+        if (key != GLFW.GLFW_KEY_E || action != GLFW.GLFW_PRESS) return;
+        int n = Math.round(clock / period);
+        if (n < 1 || n == lastHit || Math.abs(clock - n * period) > window()) {
             miss();
-            return true;
+            return;
         }
-        hitThisBeat = true;
+        lastHit = n;
         if (half) {
             half = false;
             rep(true, 0);
+            // Новый темп — с этого такта.
+            float phase = clock - n * period;
             period = Math.max(MIN_PERIOD, period * 0.97f);
+            clock = n * period + phase;
+            lastHit = n;
+            lastChecked = Math.max(lastChecked, n);
         } else {
             half = true;
         }
-        return true;
     }
 
     @Override
@@ -77,14 +82,17 @@ public class PushupGame extends Minigame {
     }
 
     @Override
-    public void render(GuiGraphics g, Font font, int x, int y) {
-        int cx = x + W / 2, cy = y + 10;
-        float k = 1 - Math.min(1, Math.abs(beat - period) / Math.max(0.05f, window() * 3));
-        int r = 4 + (int) (k * 6);
-        int c = k > 0.6f ? C_ZONE : C_DIM;
-        g.fill(cx - r + jitter(), cy - r, cx + r, cy + r, c);
-        flashFrame(g, cx - 11, cy - 11, 22, 22);
-        g.drawCenteredString(font, Component.translatable(half ? "rpsports.ui.up" : "rpsports.ui.down"), cx, cy + 13, C_DIM);
-        label(g, font, Component.translatable("rpsports.ui.reps", reps), x, y + 24);
+    protected int draw(GuiGraphics g, Font font, int x, int y) {
+        g.drawCenteredString(font, Component.translatable(half ? "rpsports.ui.up" : "rpsports.ui.down"), x + W / 2, y, C_FILL);
+        int by = y + 11;
+        g.fill(x, by, x + W, by + 6, C_BG);
+        float w = window() / period;
+        zone(g, x, by, W, 6, 1 - w, 1);
+        zone(g, x, by, W, 6, 0, w);
+        float frac = (clock % period) / period;
+        marker(g, x, by, W, 6, frac);
+        flashFrame(g, x, by, W, 6);
+        label(g, font, Component.translatable("rpsports.ui.reps", reps), x, by + 9);
+        return 29;
     }
 }
