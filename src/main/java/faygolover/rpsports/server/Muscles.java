@@ -53,8 +53,10 @@ public final class Muscles {
             d.overload[i] += -d.strength[i];
             d.strength[i] = 0;
             if (medicine()) {
-                if (d.overload[i] >= SportsConfig.get(SportsConfig.STRAIN_3)) strain(sp, d, z, 3);
-                else if (d.overload[i] >= SportsConfig.get(SportsConfig.STRAIN_2)) strain(sp, d, z, 2);
+                // Хрупкий получает растяжение и надрыв раньше.
+                double k = RpCoreAPI.hasTrait(sp, RpIds.FRAGILE) ? 0.6 : 1.0;
+                if (d.overload[i] >= SportsConfig.get(SportsConfig.STRAIN_3) * k) strain(sp, d, z, 3);
+                else if (d.overload[i] >= SportsConfig.get(SportsConfig.STRAIN_2) * k) strain(sp, d, z, 2);
             } else {
                 // Без мода тела травм нет: мышцы просто отказывают, упражнение кончается.
                 SportsService.stop(sp, null);
