@@ -48,6 +48,7 @@ minecraft {
 
         client {
             property 'forge.enabledGameTestNamespaces', mod_id
+            if (project.hasProperty('username')) args '--username', project.property('username')
         }
 
         server {
@@ -81,8 +82,11 @@ dependencies {
     implementation fg.deobf("blank:rpcore:${rpcore_version}")
     implementation fg.deobf("blank:rpstamina:${rpstamina_version}")
     implementation fg.deobf("blank:player-animation-lib-forge:${playeranim_version}")
-    // Для проверки вместе: -Pwith_perks
-    if (project.hasProperty('with_perks')) runtimeOnly fg.deobf("blank:rpperks:${rpperks_version}")
+    // Проверка вместе с семьёй: -Pwith_family=true (Perks + Culinary) или по одному: -Pwith_perks=true, -Pwith_culinary=true.
+    def flag = { String name -> (project.findProperty(name) ?: 'false').toString().toBoolean() }
+    boolean family = flag('with_family')
+    if (family || flag('with_perks')) runtimeOnly fg.deobf("blank:rpperks:${rpperks_version}")
+    if (family || flag('with_culinary')) runtimeOnly fg.deobf("blank:rpculinary:${rpculinary_version}")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
