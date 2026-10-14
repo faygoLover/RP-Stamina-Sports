@@ -71,6 +71,7 @@ public class RpSports {
             RpCoreAPI.registerModule(MODID, "спорт: тренажёры, мини-игры, усталость мышц, рост Силы и Телосложения");
             RpCoreAPI.registerCommand(MODID, "/rpsports status [игрок]", "rpsports.help.status", 2, false);
             RpCoreAPI.registerCommand(MODID, "/rpsports rest [игрок]", "rpsports.help.rest", 2, false);
+            RpCoreAPI.registerCommand(MODID, "/rpsports records [упражнение]", "rpsports.help.records", 0, false);
         });
     }
 
@@ -121,6 +122,11 @@ public class RpSports {
     }
 
     private void registerCommands(RegisterCommandsEvent e) {
+        // Рекорды — всем: /rpsports records [упражнение].
+        var records = Commands.literal("records").executes(c -> records(c, null));
+        for (faygolover.rpsports.core.Exercise ex : faygolover.rpsports.core.Exercise.VALUES)
+            records.then(Commands.literal(ex.id).executes(c -> records(c, ex)));
+        e.getDispatcher().register(Commands.literal("rpsports").then(records));
         e.getDispatcher().register(Commands.literal("rpsports").requires(s -> s.hasPermission(2))
                 .then(Commands.literal("status")
                         .executes(c -> status(c, c.getSource().getPlayerOrException()))
@@ -139,6 +145,16 @@ public class RpSports {
             String flags = (d.pain[i] ? " боль" : d.fatigued[i] ? " усталость" : "") + (d.overload[i] > 0 ? String.format(Locale.ROOT, " перегрузка %.0f%%", d.overload[i]) : "");
             c.getSource().sendSuccess(() -> Component.translatable(z.key()).append(String.format(Locale.ROOT, ": %.0f%%", d.strength[i]) + flags)
                     .withStyle(ChatFormatting.GRAY), false);
+        }
+        return 1;
+    }
+
+    private static int records(CommandContext<CommandSourceStack> c, @org.jetbrains.annotations.Nullable faygolover.rpsports.core.Exercise ex) {
+        ServerPlayer viewer = c.getSource().getPlayer();
+        for (faygolover.rpsports.core.Exercise e : faygolover.rpsports.core.Exercise.VALUES) {
+            if (ex != null && e != ex) continue;
+            for (Component line : faygolover.rpsports.server.Records.lines(c.getSource().getServer(), viewer, e, ex == null ? 3 : 10))
+                c.getSource().sendSuccess(() -> line, false);
         }
         return 1;
     }

@@ -65,6 +65,8 @@ public final class SportsRegistry {
     private static final VoxelShape TREAD_FRONT = Shapes.or(Block.box(0, 0, 2, 14, 3, 14),
             Block.box(13, 3, 2, 15, 16, 4), Block.box(13, 3, 12, 15, 16, 14));
     private static final VoxelShape MAT_SHAPE = Block.box(0, 0, 0, 16, 1, 16);
+    private static final VoxelShape BOARD_SHAPE = Shapes.or(Block.box(1, 0, 7, 3, 16, 9), Block.box(13, 0, 7, 15, 16, 9),
+            Block.box(0, 5, 6, 16, 16, 7));
 
     /** Скамья 2 блока в длину (стойка с грифом + под ноги). */
     public static final RegistryObject<Block> BENCH = BLOCKS.register("bench", () -> new BenchBlock(metal(), BENCH_HEAD, BENCH_FOOT));
@@ -82,12 +84,17 @@ public final class SportsRegistry {
             () -> new MachineBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLUE).strength(0.3f).sound(SoundType.WOOL).noOcclusion(),
                     MAT_SHAPE, null));
 
+    /** Доска рекордов: ПКМ — топ сервера. */
+    public static final RegistryObject<Block> RECORDS_BOARD = BLOCKS.register("records_board",
+            () -> new faygolover.rpsports.block.RecordsBoardBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.5f)
+                    .sound(SoundType.WOOD).noOcclusion(), BOARD_SHAPE));
+
     public static final List<RegistryObject<Item>> DUMBBELLS = new ArrayList<>();
     public static final List<RegistryObject<Item>> PLATES = new ArrayList<>();
 
     static {
         for (Object[] b : new Object[][]{{BENCH, "bench"}, {PULLUP_BAR, "pullup_bar"}, {PUNCHING_BAG, "punching_bag"},
-                {TREADMILL, "treadmill"}, {GYM_MAT, "gym_mat"}}) {
+                {TREADMILL, "treadmill"}, {GYM_MAT, "gym_mat"}, {RECORDS_BOARD, "records_board"}}) {
             @SuppressWarnings("unchecked") RegistryObject<Block> block = (RegistryObject<Block>) b[0];
             ITEMS.register((String) b[1], () -> new BlockItem(block.get(), new Item.Properties()));
         }

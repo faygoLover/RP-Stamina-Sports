@@ -144,6 +144,14 @@ w(os.path.join(A, "models", "item", "gym_mat.json"), {"parent": "rpsports:block/
 w(os.path.join(A, "blockstates", "gym_mat.json"), {"variants": {f"facing={f}": {"model": "rpsports:block/gym_mat", **({"y": y} if y else {})} for f, y in ROT}})
 loot("gym_mat", False)
 
+# ---- Доска рекордов: две стойки и щит.
+board_tex = {"post": "minecraft:block/dark_oak_planks", "board": "minecraft:block/oak_planks", "particle": "minecraft:block/oak_planks"}
+board = [box([1, 0, 7], [3, 16, 9], "post"), box([13, 0, 7], [15, 16, 9], "post"), box([0, 5, 6], [16, 16, 7], "board")]
+w(os.path.join(A, "models", "block", "records_board.json"), {"parent": "minecraft:block/block", "textures": board_tex, "elements": board})
+w(os.path.join(A, "models", "item", "records_board.json"), {"parent": "rpsports:block/records_board"})
+w(os.path.join(A, "blockstates", "records_board.json"), {"variants": {f"facing={f}": {"model": "rpsports:block/records_board", **({"y": y} if y else {})} for f, y in ROT}})
+loot("records_board", False)
+
 # ---- Блины для штанги.
 ITEM = {"gui": {"rotation": [30, 45, 0], "translation": [0, 0, 0], "scale": [0.9, 0.9, 0.9]},
         "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.5, 0.5, 0.5]},

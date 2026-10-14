@@ -101,5 +101,10 @@
   "rpsports.ui.bench_title": "Bench — %s kg",
   "rpsports.ui.bench_left": "Left",
   "rpsports.ui.bench_right": "Right",
-  "rpsports.msg.unbalanced": "The bar is unbalanced — even the sides (Shift+RMB)"
+  "rpsports.msg.unbalanced": "The bar is unbalanced — even the sides (Shift+RMB)",
+  "block.rpsports.records_board": "Records Board",
+  "rpsports.records.board": "Records Board",
+  "rpsports.records.mine": " · my record %s",
+  "rpsports.records.empty": "  no records yet",
+  "rpsports.help.records": "records: server top and your own (best series in a set)"
 }

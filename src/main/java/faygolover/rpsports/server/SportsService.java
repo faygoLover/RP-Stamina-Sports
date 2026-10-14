@@ -471,6 +471,8 @@ public final class SportsService {
         if (data != null) {
             // Рекорд — лучшая серия удачных повторов подряд за подход.
             double value = s.bestSeries;
+            // Общий топ сервера (доска рекордов, /rpsports records).
+            if (value > 0) Records.get(sp.server).submit(sp, s.exercise, value);
             if (value > 0 && value > data.record(s.exercise)) {
                 boolean had = data.record(s.exercise) > 0;
                 data.setRecord(s.exercise, value);

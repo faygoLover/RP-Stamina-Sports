@@ -1,0 +1,214 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "post": "minecraft:block/dark_oak_planks",
+    "board": "minecraft:block/oak_planks",
+    "particle": "minecraft:block/oak_planks"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0,
+        7
+      ],
+      "to": [
+        3,
+        16,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#post",
+          "uv": [
+            13,
+            0,
+            15,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#post",
+          "uv": [
+            1,
+            0,
+            3,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#post",
+          "uv": [
+            7,
+            0,
+            9,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#post",
+          "uv": [
+            7,
+            0,
+            9,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#post",
+          "uv": [
+            1,
+            7,
+            3,
+            9
+          ]
+        },
+        "down": {
+          "texture": "#post",
+          "uv": [
+            1,
+            7,
+            3,
+            9
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        13,
+        0,
+        7
+      ],
+      "to": [
+        15,
+        16,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#post",
+          "uv": [
+            1,
+            0,
+            3,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#post",
+          "uv": [
+            13,
+            0,
+            15,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#post",
+          "uv": [
+            7,
+            0,
+            9,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#post",
+          "uv": [
+            7,
+            0,
+            9,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#post",
+          "uv": [
+            13,
+            7,
+            15,
+            9
+          ]
+        },
+        "down": {
+          "texture": "#post",
+          "uv": [
+            13,
+            7,
+            15,
+            9
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        5,
+        6
+      ],
+      "to": [
+        16,
+        16,
+        7
+      ],
+      "faces": {
+        "north": {
+          "texture": "#board",
+          "uv": [
+            0,
+            0,
+            16,
+            11
+          ]
+        },
+        "south": {
+          "texture": "#board",
+          "uv": [
+            0,
+            0,
+            16,
+            11
+          ]
+        },
+        "east": {
+          "texture": "#board",
+          "uv": [
+            9,
+            0,
+            10,
+            11
+          ]
+        },
+        "west": {
+          "texture": "#board",
+          "uv": [
+            6,
+            0,
+            7,
+            11
+          ]
+        },
+        "up": {
+          "texture": "#board",
+          "uv": [
+            0,
+            6,
+            16,
+            7
+          ]
+        },
+        "down": {
+          "texture": "#board",
+          "uv": [
+            0,
+            9,
+            16,
+            10
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -101,5 +101,10 @@
   "rpsports.ui.bench_title": "Скамья — %s кг",
   "rpsports.ui.bench_left": "Левая",
   "rpsports.ui.bench_right": "Правая",
-  "rpsports.msg.unbalanced": "Штанга перекошена — уравняйте стороны (Shift+ПКМ)"
+  "rpsports.msg.unbalanced": "Штанга перекошена — уравняйте стороны (Shift+ПКМ)",
+  "block.rpsports.records_board": "Доска рекордов",
+  "rpsports.records.board": "Доска рекордов",
+  "rpsports.records.mine": " · мой рекорд %s",
+  "rpsports.records.empty": "  рекордов пока нет",
+  "rpsports.help.records": "рекорды: топ сервера и свой (серия за подход)"
 }
