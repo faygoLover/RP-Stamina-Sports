@@ -86,11 +86,14 @@ dependencies {
     implementation fg.deobf("blank:player-animation-lib-forge:${playeranim_version}")
     // bendy-lib — сгибы локтей и коленей в эмоциях (в сборке есть; аддону не обязательна).
     runtimeOnly fg.deobf("blank:bendy-lib-forge:${bendylib_version}")
-    // Проверка вместе с семьёй: -Pwith_family=true (Perks + Culinary) или по одному: -Pwith_perks=true, -Pwith_culinary=true.
+    // Проверка вместе с семьёй: -Pwith_family=true (Perks + Culinary + Medicine + PDA) или по одному: -Pwith_perks=true,
+    // -Pwith_culinary=true, -Pwith_medicine=true, -Pwith_pda=true.
     def flag = { String name -> (project.findProperty(name) ?: 'false').toString().toBoolean() }
     boolean family = flag('with_family')
     if (family || flag('with_perks')) runtimeOnly fg.deobf("blank:rpperks:${rpperks_version}")
     if (family || flag('with_culinary')) runtimeOnly fg.deobf("blank:rpculinary:${rpculinary_version}")
+    if (family || flag('with_medicine')) runtimeOnly fg.deobf("blank:rpmedicine:${rpmedicine_version}")
+    if (family || flag('with_pda')) runtimeOnly fg.deobf("blank:rppda:${rppda_version}")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
