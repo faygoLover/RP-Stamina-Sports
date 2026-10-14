@@ -21,7 +21,7 @@
   "entity.rpsports.seat": "Сиденье",
   "effect.rpsports.muscle_pain": "Боль в мышцах",
   "rpsports.tip.dumbbell": "%s кг. ПКМ — подъёмы на бицепс, держать E",
-  "rpsports.tip.plate": "%s кг. Вешается парой: ПКМ по скамье",
+  "rpsports.tip.plate": "%s кг. На штангу — через окно скамьи (Shift+ПКМ)",
   "rpsports.exercise.bench": "Жим лёжа",
   "rpsports.exercise.dumbbell": "Гантели",
   "rpsports.exercise.pullup": "Подтягивания",
@@ -59,8 +59,6 @@
   "rpsports.bad.squat": "Ноги подкосились — сел на пол",
   "rpsports.bad.situp": "Живот свело",
   "rpsports.msg.bar_weight": "На грифе: %s кг",
-  "rpsports.msg.bar_full": "На гриф больше не повесить",
-  "rpsports.msg.need_pair": "Блины вешаются парой — нужно два",
   "rpsports.msg.bench_busy": "Скамья занята",
   "rpsports.msg.bar_racked": "Штанга с трудом легла на стойку",
   "rpsports.msg.spotting": "Вы страхуете",
@@ -97,8 +95,11 @@
   "rpsports.ui.press": "НАЖМИТЕ",
   "rpsports.ui.space": "ПРОБЕЛ",
   "rpsports.ui.stats": "Повторы %s · Серия %s · Рекорд %s",
-  "rpsports.ui.stats_weight": "Повторы %s · %s кг · Серия %s · Рекорд %s",
   "rpsports.msg.no_room": "Негде нормально встать",
   "rpsports.msg.record": "Новый рекорд — %s: %s",
-  "rpsports.bad.squat_fall": "Потерял равновесие и упал"
+  "rpsports.bad.squat_fall": "Потерял равновесие и упал",
+  "rpsports.ui.bench_title": "Скамья — %s кг",
+  "rpsports.ui.bench_left": "Левая",
+  "rpsports.ui.bench_right": "Правая",
+  "rpsports.msg.unbalanced": "Штанга перекошена — уравняйте стороны (Shift+ПКМ)"
 }

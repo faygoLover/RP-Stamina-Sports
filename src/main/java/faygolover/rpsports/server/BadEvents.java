@@ -91,7 +91,7 @@ final class BadEvents {
             }
             case BAG -> {
                 bruise(sp, RpIds.PART_HEAD, 0.2, 1);
-                SportsNet.send(sp, new SportsNet.Status(false, true, s.reps));
+                SportsNet.send(sp, new SportsNet.Status(0, true, s.reps));
                 say(sp, "rpsports.bad.bag");
                 SportsService.stop(sp, null);
             }

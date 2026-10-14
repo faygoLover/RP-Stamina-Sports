@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 public final class SportsNet {
     private SportsNet() {}
 
-    private static final String VERSION = "2";
+    private static final String VERSION = "3";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(RpSports.MODID, "main"),
             () -> VERSION, VERSION::equals, VERSION::equals);
 
@@ -121,10 +121,10 @@ public final class SportsNet {
         static void handle(Progress p, Supplier<NetworkEvent.Context> c) { server(c, sp -> SportsService.onProgress(sp, p.a, p.b)); }
     }
 
-    /** Сервер → клиент: дрожь (мало выносливости или устала зона), встряска камеры, число повторов. */
-    public record Status(boolean tremble, boolean shake, int reps) {
-        static void encode(Status p, FriendlyByteBuf b) { b.writeBoolean(p.tremble); b.writeBoolean(p.shake); b.writeVarInt(p.reps); }
-        static Status decode(FriendlyByteBuf b) { return new Status(b.readBoolean(), b.readBoolean(), b.readVarInt()); }
+    /** Сервер → клиент: сила дрожи 0…1 (мало выносливости, устала зона), встряска камеры, число повторов. */
+    public record Status(float tremble, boolean shake, int reps) {
+        static void encode(Status p, FriendlyByteBuf b) { b.writeFloat(p.tremble); b.writeBoolean(p.shake); b.writeVarInt(p.reps); }
+        static Status decode(FriendlyByteBuf b) { return new Status(b.readFloat(), b.readBoolean(), b.readVarInt()); }
         static void handle(Status p, Supplier<NetworkEvent.Context> c) { client(c, () -> faygolover.rpsports.client.ClientSession.status(p)); }
     }
 

@@ -99,6 +99,15 @@ public final class SportsService {
             sp.displayClientMessage(Component.translatable("rpsports.msg.program", Component.translatable("rpsports.program." + p)), true);
             return;
         }
+        if (e == Exercise.BENCH && shift) {
+            // Shift+ПКМ — окно блинов (пока на скамье никто не жмёт).
+            if (benchBusy(sp.level(), pos)) {
+                sp.displayClientMessage(Component.translatable("rpsports.msg.bench_busy").withStyle(ChatFormatting.GRAY), true);
+            } else if (sp.level().getBlockEntity(pos) instanceof BenchBlockEntity be) {
+                net.minecraftforge.network.NetworkHooks.openScreen(sp, be, pos);
+            }
+            return;
+        }
         if (e == Exercise.BENCH) {
             for (var en : SESSIONS.entrySet()) {
                 Session s = en.getValue();
@@ -111,6 +120,10 @@ public final class SportsService {
                     return;
                 }
             }
+        }
+        if (e == Exercise.BENCH && sp.level().getBlockEntity(pos) instanceof BenchBlockEntity be && !be.balanced()) {
+            sp.displayClientMessage(Component.translatable("rpsports.msg.unbalanced").withStyle(ChatFormatting.GOLD), true);
+            return;
         }
         double kg = e == Exercise.BENCH ? BenchBlock.weightAt(sp.level(), pos) : 0;
         start(sp, e, pos, InteractionHand.MAIN_HAND, kg, PROGRAMS.getOrDefault(sp.getUUID(), 1));
@@ -257,10 +270,12 @@ public final class SportsService {
                     yaw = facing.toYRot();
                 }
                 case TREADMILL -> {
-                    x = cx;
-                    z = cz;
+                    // Дорожка 2 блока вдоль: бежит вправо (по часовой от FACING), к поручню на втором блоке.
+                    Direction run = facing.getClockWise();
+                    x = cx + run.getStepX() * 0.45;
+                    z = cz + run.getStepZ() * 0.45;
                     y = pos.getY() + 3 / 16.0;
-                    yaw = facing.toYRot();
+                    yaw = run.toYRot();
                 }
                 case BAG -> {
                     // Встать на блок перед грушей — только если там можно нормально стоять.
@@ -307,7 +322,24 @@ public final class SportsService {
     /** Каждый тик: держать игрока на месте упражнения (отбросило, толкнули — вернуть). */
     public static void tick(ServerPlayer sp) {
         Session s = SESSIONS.get(sp.getUUID());
-        if (s == null || s.anchor == null || s.failed) return;
+        if (s == null || s.failed) return;
+        StaminaProvider stamina = RpCoreAPI.stamina();
+        if (stamina != null) {
+            // Траты повторов — плавно, примерно за секунду.
+            if (s.pendingStamina > 0) {
+                double chunk = s.pendingStamina < 0.5 ? s.pendingStamina : Math.max(0.5, s.pendingStamina * 0.12);
+                s.pendingStamina -= chunk;
+                stamina.spend(sp, (float) chunk, source(s.exercise));
+            }
+            // Дорожка: темп с клиента (0–1): ходьба → бег → рывок — каждый тик.
+            if (s.exercise == Exercise.TREADMILL && s.a > 0.05) {
+                double tempo = s.a;
+                double perSecond = tempo < 0.45 ? SportsConfig.get(SportsConfig.TREAD_WALK)
+                        : tempo < 0.8 ? SportsConfig.get(SportsConfig.TREAD_RUN) : SportsConfig.get(SportsConfig.TREAD_SPRINT);
+                stamina.spend(sp, (float) (perSecond / 20 * s.armorMult(SportsConfig.get(SportsConfig.ARMOR_PENALTY))), source(Exercise.TREADMILL));
+            }
+        }
+        if (s.anchor == null) return;
         if (sp.position().distanceToSqr(s.anchor) > 0.04)
             sp.connection.teleport(s.anchor.x, s.anchor.y, s.anchor.z, sp.getYRot(), sp.getXRot());
         if (sp.isShiftKeyDown()) sp.setShiftKeyDown(false);
@@ -340,7 +372,7 @@ public final class SportsService {
         StaminaProvider stamina = RpCoreAPI.stamina();
         double cost = cfg.stamina().get() * load * armor;
         if (s.exercise == Exercise.BAG && RpCoreAPI.hasTrait(sp, RpIds.MELEE_FIGHTER)) cost *= 0.8;
-        if (stamina != null && cost > 0) stamina.spend(sp, (float) cost, source(s.exercise));
+        if (stamina != null && cost > 0) s.pendingStamina += cost;
 
         // Усталость зон.
         Map<Zone, Double> zones = zones(s);
@@ -399,9 +431,22 @@ public final class SportsService {
             BadEvents.trigger(sp, s, d);
             return;
         }
-        boolean tremble = frac < SportsConfig.get(SportsConfig.TREMBLE_STAMINA);
-        for (Zone z : zones(s).keySet()) if (d.fatigued[z.ordinal()]) tremble = true;
-        SportsNet.send(sp, new SportsNet.Status(tremble, false, s.reps));
+        SportsNet.send(sp, new SportsNet.Status((float) trembleLevel(s, d, frac), false, s.reps));
+    }
+
+    /**
+     * Сила дрожи 0…1: появляется, как только устал (выносливость ниже порога или зона ниже «Усталости»), и плавно
+     * растёт; 1 — только когда выжат совсем (выносливость на нуле).
+     */
+    static double trembleLevel(Session s, SportsData d, double frac) {
+        double t = SportsConfig.get(SportsConfig.TREMBLE_STAMINA);
+        double level = frac < t ? (t - frac) / t : 0;
+        double tired = SportsConfig.get(SportsConfig.FATIGUE_STAGE);
+        for (Zone z : zones(s).keySet()) {
+            double str = d.strength[z.ordinal()];
+            if (str < tired) level = Math.max(level, 0.15 + 0.5 * (tired - str) / tired);
+        }
+        return Math.max(0, Math.min(1, level));
     }
 
     public static void onProgress(ServerPlayer sp, float a, float b) {
@@ -420,10 +465,12 @@ public final class SportsService {
     public static void stop(ServerPlayer sp, @Nullable String reason) {
         Session s = SESSIONS.remove(sp.getUUID());
         if (s == null) return;
+        StaminaProvider st = RpCoreAPI.stamina();
+        if (st != null && s.pendingStamina > 0) st.spend(sp, (float) s.pendingStamina, source(s.exercise));
         SportsData data = SportsData.get(sp);
         if (data != null) {
-            // Рекорд подхода: штанга и гантели — повторы × вес, груша — лучшая серия, остальное — повторы.
-            double value = s.exercise.weighted() ? s.volume : s.exercise == Exercise.BAG ? s.bestSeries : s.reps;
+            // Рекорд — лучшая серия удачных повторов подряд за подход.
+            double value = s.bestSeries;
             if (value > 0 && value > data.record(s.exercise)) {
                 boolean had = data.record(s.exercise) > 0;
                 data.setRecord(s.exercise, value);
@@ -494,16 +541,8 @@ public final class SportsService {
                 if (sp2 != null) sp2.displayClientMessage(Component.translatable("rpsports.msg.spot_left"), true);
             }
         }
-        if (s.exercise == Exercise.TREADMILL && !s.failed) {
-            // Темп с клиента (0–1): ходьба → бег → рывок.
-            double tempo = s.a;
-            double perSecond = tempo < 0.45 ? SportsConfig.get(SportsConfig.TREAD_WALK)
-                    : tempo < 0.8 ? SportsConfig.get(SportsConfig.TREAD_RUN) : SportsConfig.get(SportsConfig.TREAD_SPRINT);
-            StaminaProvider stamina = RpCoreAPI.stamina();
-            if (stamina != null && tempo > 0.05)
-                stamina.spend(sp, (float) (perSecond * s.armorMult(SportsConfig.get(SportsConfig.ARMOR_PENALTY))), source(Exercise.TREADMILL));
-            if (tempo > 0.05) afterLoad(sp, s, d, now);
-        }
+        // Раз в секунду: дрожь и плохое событие по текущей выносливости (траты идут плавно, по тикам).
+        if (!s.failed) afterLoad(sp, s, d, now);
         if (BadEvents.tick(sp, s, d, now)) stop(sp, null);
     }
 

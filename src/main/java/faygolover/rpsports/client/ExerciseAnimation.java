@@ -108,10 +108,30 @@ public final class ExerciseAnimation implements IAnimation {
         };
     }
 
+    /** Жим: наклон рук к ногам (штанга опускается к груди) и разведение в стороны, радианы. */
+    static float benchTilt(float A) {
+        return (1 - A) * 0.7f;
+    }
+
+    private static final float BENCH_SPREAD = 0.12f;
+
     /**
-     * Жим лёжа: на спине на подушке (сиденье ставит сервер так, что бёдра — на высоте спины; голова под грифом), ноги
-     * спущены к полу. Руки вверх; шкала пуста — штанга у груди (руки «короче» — плечо уходит в скамью), полна —
-     * руки прямые.
+     * Где кисти (гриф) относительно плеч лежащего: {сдвиг к ногам, высота над бёдрами}, блоки. Та же формула, что у
+     * позы рук, — штанга ({@link BenchRenderer}) ровно в руках.
+     */
+    public static float[] benchHands(float A) {
+        float tilt = benchTilt(Math.max(0, Math.min(1, A)));
+        return new float[]{ARM * (float) Math.sin(tilt), ARM * (float) Math.cos(tilt) * (float) Math.cos(BENCH_SPREAD)};
+    }
+
+    /** Подъём штанги сейчас (для отрисовки грифа), −1 — не жмёт. */
+    float benchLift() {
+        return exercise == Exercise.BENCH.ordinal() ? Math.max(0, Math.min(1, shownA)) : -1;
+    }
+
+    /**
+     * Жим лёжа: на спине на подушке (сиденье ставит сервер так, что бёдра — на высоте спины; плечи под грифом), ноги
+     * спущены к полу. Руки вверх и чуть врозь; шкала пуста — руки наклонены к ногам (штанга у груди), полна — прямые.
      */
     private Vec3f bench(String part, boolean pos, Vec3f v, float A) {
         switch (part) {
@@ -119,7 +139,7 @@ public final class ExerciseAnimation implements IAnimation {
             case "head" -> { return pos ? v : v3(0, 0, 0); }
             case "rightArm", "leftArm" -> {
                 boolean right = part.equals("rightArm");
-                return pos ? v3(v.getX(), v.getY(), v.getZ() + (1 - A) * 6.5f) : v3(-PI / 2, 0, right ? 0.08f : -0.08f);
+                return pos ? v : v3(-PI / 2 + benchTilt(A), right ? BENCH_SPREAD : -BENCH_SPREAD, 0);
             }
             case "rightLeg", "leftLeg" -> { return pos ? v : v3(1.1f, 0, part.equals("rightLeg") ? 0.12f : -0.12f); }
             default -> { return v; }

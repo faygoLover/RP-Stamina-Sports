@@ -27,7 +27,9 @@ public class SitupGame extends Minigame {
         seq = new int[len];
         for (int i = 0; i < len; i++) seq[i] = random.nextInt(4);
         idx = 0;
-        limit = (1.6f + 0.45f * len) * strengthEase() * params.ease() * (tremble ? 0.8f : 1f) / Math.max(0.7f, params.ratio());
+        // Время на стрелку сокращается с каждым повтором (сложность подхода растёт); всего — на треть меньше прежнего.
+        float perArrow = Math.max(0.25f, 0.47f * (float) Math.pow(0.97, reps));
+        limit = (0.4f + perArrow * len) * strengthEase() * params.ease() * (tremble ? 0.8f : 1f) / Math.max(0.7f, params.ratio());
         left = limit;
     }
 

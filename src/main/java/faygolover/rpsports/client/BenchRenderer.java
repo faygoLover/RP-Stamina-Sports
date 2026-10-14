@@ -1,0 +1,136 @@
+package faygolover.rpsports.client;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import faygolover.rpsports.block.BenchBlockEntity;
+import faygolover.rpsports.block.MachineBlock;
+import faygolover.rpsports.entity.SeatEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.InventoryMenu;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+
+/**
+ * Штанга на скамье: гриф и блины (из окна блинов, по сторонам, от середины к краю). Пока на скамье лежит игрок, гриф
+ * у него в руках — высота и сдвиг к груди считаются так же, как поза ({@link ExerciseAnimation#benchHands}); иначе —
+ * на крюках стоек. Координаты — как у модели «на север» (голова у x = 0, ноги — к +x, гриф поперёк — вдоль z).
+ */
+public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
+    private static final ResourceLocation BAR_TEX = new ResourceLocation("minecraft", "block/iron_block");
+    private static final ResourceLocation PLATE_TEX = new ResourceLocation("minecraft", "block/black_concrete");
+    /** Плечи лежащего — на 12,5/16 от края блока со стойкой; крюки стоек — на 13,6/16 и высоте 17,6/16. */
+    private static final float SHOULDER_X = 12.5f / 16, RACK_X = 13.6f / 16, RACK_Y = 17.6f / 16;
+    /** Гриф вдоль z: от −10/16 до 26/16; стойки — z 0…1 и 15…16, блины — снаружи. */
+    private static final float BAR_FROM = -10 / 16f, BAR_TO = 26 / 16f, INNER_L = -0.5f / 16, INNER_R = 16.5f / 16;
+
+    public BenchRenderer(BlockEntityRendererProvider.Context ctx) {}
+
+    @Override
+    public boolean shouldRenderOffScreen(BenchBlockEntity be) {
+        return true;
+    }
+
+    @Override
+    public void render(BenchBlockEntity be, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+        if (!be.getBlockState().hasProperty(MachineBlock.FACING)) return;
+        Direction facing = be.getBlockState().getValue(MachineBlock.FACING);
+        float barX = RACK_X, barY = RACK_Y;
+        AbstractClientPlayer lifter = lifter(be);
+        if (lifter != null) {
+            float[] h = ExerciseAnimation.benchHands(ExerciseAnimations.benchLift(lifter));
+            barX = SHOULDER_X + h[0];
+            barY = BENCH_PIVOT_Y + h[1];
+        }
+        TextureAtlasSprite bar = sprite(BAR_TEX), plate = sprite(PLATE_TEX);
+        VertexConsumer vc = buffers.getBuffer(RenderType.entitySolid(InventoryMenu.BLOCK_ATLAS));
+        pose.pushPose();
+        pose.translate(0.5, 0, 0.5);
+        pose.mulPose(Axis.YP.rotationDegrees(-angle(facing)));
+        pose.translate(-0.5, 0, -0.5);
+        float r = 0.6f / 16;
+        box(pose, vc, bar, barX - r, barY - r, BAR_FROM, barX + r, barY + r, BAR_TO, light, overlay);
+        for (int side = 0; side < 2; side++) {
+            float z = side == 0 ? INNER_L : INNER_R;
+            for (int i = 0; i < BenchBlockEntity.PER_SIDE; i++) {
+                double kg = be.plateKg(side, i);
+                if (kg <= 0) continue;
+                float[] size = plateSize(kg);
+                float pr = size[0] / 16, t = size[1] / 16;
+                float z0 = side == 0 ? z - t : z, z1 = side == 0 ? z : z + t;
+                box(pose, vc, plate, barX - pr, barY - pr, z0, barX + pr, barY + pr, z1, light, overlay);
+                z = side == 0 ? z0 : z1;
+            }
+            // Замок за блинами.
+            float zc0 = side == 0 ? z - 0.8f / 16 : z, zc1 = side == 0 ? z : z + 0.8f / 16;
+            box(pose, vc, bar, barX - 1.2f / 16, barY - 1.2f / 16, zc0, barX + 1.2f / 16, barY + 1.2f / 16, zc1, light, overlay);
+        }
+        pose.popPose();
+    }
+
+    /** Высота бёдер лежащего (сервер ставит так, что спина — на подушке, 8/16). */
+    static final float BENCH_PIVOT_Y = 0.617f;
+
+    /** Радиус и толщина блина, пиксели. */
+    private static float[] plateSize(double kg) {
+        if (kg >= 20) return new float[]{6.5f, 1.6f};
+        if (kg >= 10) return new float[]{5.5f, 1.3f};
+        if (kg >= 5) return new float[]{4.5f, 1.0f};
+        return new float[]{3.5f, 0.8f};
+    }
+
+    private static float angle(Direction facing) {
+        return switch (facing) {
+            case EAST -> 90;
+            case SOUTH -> 180;
+            case WEST -> 270;
+            default -> 0;
+        };
+    }
+
+    /** Кто лежит на этой скамье: игрок на сиденье рядом с ней, у которого идёт жим. */
+    private static AbstractClientPlayer lifter(BenchBlockEntity be) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) return null;
+        var c = be.getBlockPos().getCenter();
+        for (AbstractClientPlayer p : level.players()) {
+            if (p.getVehicle() instanceof SeatEntity && p.distanceToSqr(c) < 2.5 && ExerciseAnimations.benchLift(p) >= 0) return p;
+        }
+        return null;
+    }
+
+    private static TextureAtlasSprite sprite(ResourceLocation id) {
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(id);
+    }
+
+    private static void box(PoseStack pose, VertexConsumer vc, TextureAtlasSprite s, float x0, float y0, float z0,
+                            float x1, float y1, float z1, int light, int overlay) {
+        Matrix4f m = pose.last().pose();
+        Matrix3f n = pose.last().normal();
+        float u0 = s.getU0(), u1 = s.getU1(), v0 = s.getV0(), v1 = s.getV1();
+        // Низ, верх, север, юг, запад, восток.
+        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, -1, 0, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1);
+        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, 1, 0, x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0);
+        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, 0, -1, x1, y1, z0, x1, y0, z0, x0, y0, z0, x0, y1, z0);
+        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, 0, 1, x0, y1, z1, x0, y0, z1, x1, y0, z1, x1, y1, z1);
+        quad(vc, m, n, light, overlay, u0, v0, u1, v1, -1, 0, 0, x0, y1, z0, x0, y0, z0, x0, y0, z1, x0, y1, z1);
+        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 1, 0, 0, x1, y1, z1, x1, y0, z1, x1, y0, z0, x1, y1, z0);
+    }
+
+    private static void quad(VertexConsumer vc, Matrix4f m, Matrix3f n, int light, int overlay, float u0, float v0, float u1, float v1,
+                             float nx, float ny, float nz, float... p) {
+        float[][] uv = {{u0, v0}, {u0, v1}, {u1, v1}, {u1, v0}};
+        for (int i = 0; i < 4; i++) {
+            vc.vertex(m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).color(1f, 1f, 1f, 1f).uv(uv[i][0], uv[i][1])
+                    .overlayCoords(overlay).uv2(light).normal(n, nx, ny, nz).endVertex();
+        }
+    }
+}

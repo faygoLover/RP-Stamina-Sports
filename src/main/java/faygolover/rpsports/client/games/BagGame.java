@@ -161,7 +161,7 @@ public class BagGame extends Minigame {
             float ny = lineY - k * (FIELD_H - 6);
             if (ny < y || ny > y + FIELD_H) continue;
             float lx = x0 + n.lane * (LANE_W + GAP) + LANE_W / 2f;
-            Qte.disk(g, lx, ny, 7, hand(n.lane) == 0 ? Qte.GOLD : Qte.WHITE);
+            Qte.disk(g, lx, ny, 7, Qte.GOLD);
         }
         for (int l = 0; l < LANES; l++) {
             float lx = x0 + l * (LANE_W + GAP) + LANE_W / 2f;

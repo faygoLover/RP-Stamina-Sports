@@ -21,7 +21,7 @@
   "entity.rpsports.seat": "Seat",
   "effect.rpsports.muscle_pain": "Muscle Pain",
   "rpsports.tip.dumbbell": "%s kg. RMB — biceps curls, hold E",
-  "rpsports.tip.plate": "%s kg. Hung in pairs: RMB on a bench",
+  "rpsports.tip.plate": "%s kg. Onto the bar via the bench window (Shift+RMB)",
   "rpsports.exercise.bench": "Bench press",
   "rpsports.exercise.dumbbell": "Dumbbells",
   "rpsports.exercise.pullup": "Pull-ups",
@@ -59,8 +59,6 @@
   "rpsports.bad.squat": "Your legs buckled — you sat down",
   "rpsports.bad.situp": "Stomach cramp",
   "rpsports.msg.bar_weight": "On the bar: %s kg",
-  "rpsports.msg.bar_full": "The bar is full",
-  "rpsports.msg.need_pair": "Plates go on in pairs — you need two",
   "rpsports.msg.bench_busy": "The bench is busy",
   "rpsports.msg.bar_racked": "You barely racked the bar",
   "rpsports.msg.spotting": "You are spotting",
@@ -97,8 +95,11 @@
   "rpsports.ui.press": "PRESS",
   "rpsports.ui.space": "SPACE",
   "rpsports.ui.stats": "Reps %s · Series %s · Record %s",
-  "rpsports.ui.stats_weight": "Reps %s · %s kg · Series %s · Record %s",
   "rpsports.msg.no_room": "No room to stand properly",
   "rpsports.msg.record": "New record — %s: %s",
-  "rpsports.bad.squat_fall": "You lost your balance and fell"
+  "rpsports.bad.squat_fall": "You lost your balance and fell",
+  "rpsports.ui.bench_title": "Bench — %s kg",
+  "rpsports.ui.bench_left": "Left",
+  "rpsports.ui.bench_right": "Right",
+  "rpsports.msg.unbalanced": "The bar is unbalanced — even the sides (Shift+RMB)"
 }

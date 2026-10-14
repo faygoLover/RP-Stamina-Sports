@@ -19,6 +19,8 @@ public class DumbbellGame extends Minigame {
         final int key, extra;
         final float ratio, kg, phase;
         float fill, down;
+        /** Насколько зона уже сузилась от удачных повторов. */
+        float narrowed;
         boolean holding;
 
         Arm(int key, int extra, float ratio, float kg) {
@@ -31,8 +33,8 @@ public class DumbbellGame extends Minigame {
 
         float zoneWidth() {
             float r = Math.max(0.3f, ratio);
-            float w = 0.2f / (float) Math.pow(r, 1.2) * params.ease() * strengthEase();
-            return Math.max(0.06f, Math.min(0.28f, w));
+            float w = 0.13f / (float) Math.pow(r, 1.2) * params.ease() * strengthEase() - narrowed;
+            return Math.max(0.05f, Math.min(0.2f, w));
         }
 
         void update(float dt) {
@@ -59,6 +61,7 @@ public class DumbbellGame extends Minigame {
                 holding = false;
                 boolean ok = fill >= ZONE_START && fill <= ZONE_START + zoneWidth();
                 rep(ok, extra, ok ? kg : 0);
+                if (ok) narrowed = Math.min(0.08f, narrowed + 0.012f);
                 down = DOWN_TIME;
             }
         }

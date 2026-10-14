@@ -4,7 +4,6 @@
   "textures": {
     "frame": "minecraft:block/iron_block",
     "pad": "minecraft:block/black_wool",
-    "bar": "minecraft:block/gray_concrete",
     "particle": "minecraft:block/iron_block"
   },
   "elements": [
@@ -76,12 +75,12 @@
       "from": [
         12,
         0,
-        3
+        0
       ],
       "to": [
         13,
         18,
-        4
+        1
       ],
       "faces": {
         "north": {
@@ -108,12 +107,12 @@
       "from": [
         12,
         0,
-        12
+        15
       ],
       "to": [
         13,
         18,
-        13
+        16
       ],
       "faces": {
         "north": {
@@ -138,33 +137,97 @@
     },
     {
       "from": [
-        11.9,
-        17,
-        -6
+        13,
+        16.4,
+        0
       ],
       "to": [
-        13.1,
-        18.2,
-        22
+        14.2,
+        17,
+        1
       ],
       "faces": {
         "north": {
-          "texture": "#bar"
+          "texture": "#frame"
         },
         "south": {
-          "texture": "#bar"
+          "texture": "#frame"
         },
         "east": {
-          "texture": "#bar"
+          "texture": "#frame"
         },
         "west": {
-          "texture": "#bar"
+          "texture": "#frame"
         },
         "up": {
-          "texture": "#bar"
+          "texture": "#frame"
         },
         "down": {
-          "texture": "#bar"
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "from": [
+        13,
+        16.4,
+        15
+      ],
+      "to": [
+        14.2,
+        17,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#frame"
+        },
+        "south": {
+          "texture": "#frame"
+        },
+        "east": {
+          "texture": "#frame"
+        },
+        "west": {
+          "texture": "#frame"
+        },
+        "up": {
+          "texture": "#frame"
+        },
+        "down": {
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "from": [
+        12,
+        1,
+        1
+      ],
+      "to": [
+        13,
+        2,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#frame"
+        },
+        "south": {
+          "texture": "#frame"
+        },
+        "east": {
+          "texture": "#frame"
+        },
+        "west": {
+          "texture": "#frame"
+        },
+        "up": {
+          "texture": "#frame"
+        },
+        "down": {
+          "texture": "#frame"
         }
       }
     }

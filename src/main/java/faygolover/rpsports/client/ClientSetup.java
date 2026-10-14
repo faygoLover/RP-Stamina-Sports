@@ -47,6 +47,7 @@ public final class ClientSetup {
     private static void setup(FMLClientSetupEvent e) {
         e.enqueueWork(() -> {
             HudRegistry.register(new SportsHud());
+            net.minecraft.client.gui.screens.MenuScreens.register(SportsRegistry.BENCH_MENU.get(), BenchScreen::new);
             ExerciseAnimations.init();
         });
     }
@@ -57,6 +58,7 @@ public final class ClientSetup {
 
     private static void renderers(EntityRenderersEvent.RegisterRenderers e) {
         e.registerEntityRenderer(SportsRegistry.SEAT.get(), NoopRenderer::new);
+        e.registerBlockEntityRenderer(SportsRegistry.BENCH_BE.get(), BenchRenderer::new);
     }
 
     /** Каждый кадр, до отрисовки: мини-игра по реальному времени, камера вокруг персонажа. */

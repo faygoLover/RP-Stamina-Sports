@@ -1,18 +1,93 @@
 {
   "variants": {
-    "facing=north": {
-      "model": "rpsports:block/treadmill"
+    "facing=north,part=0": {
+      "model": "rpsports:block/treadmill_0"
     },
-    "facing=east": {
-      "model": "rpsports:block/treadmill",
+    "facing=north,part=1": {
+      "model": "rpsports:block/treadmill_1"
+    },
+    "facing=east,part=0": {
+      "model": "rpsports:block/treadmill_0",
       "y": 90
     },
-    "facing=south": {
-      "model": "rpsports:block/treadmill",
+    "facing=east,part=1": {
+      "model": "rpsports:block/treadmill_1",
+      "y": 90
+    },
+    "facing=south,part=0": {
+      "model": "rpsports:block/treadmill_0",
       "y": 180
     },
-    "facing=west": {
-      "model": "rpsports:block/treadmill",
+    "facing=south,part=1": {
+      "model": "rpsports:block/treadmill_1",
+      "y": 180
+    },
+    "facing=west,part=0": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 270
+    },
+    "facing=west,part=1": {
+      "model": "rpsports:block/treadmill_1",
+      "y": 270
+    },
+    "facing=north,part=2": {
+      "model": "rpsports:block/treadmill_0"
+    },
+    "facing=north,part=3": {
+      "model": "rpsports:block/treadmill_0"
+    },
+    "facing=north,part=4": {
+      "model": "rpsports:block/treadmill_0"
+    },
+    "facing=north,part=5": {
+      "model": "rpsports:block/treadmill_0"
+    },
+    "facing=east,part=2": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 90
+    },
+    "facing=east,part=3": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 90
+    },
+    "facing=east,part=4": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 90
+    },
+    "facing=east,part=5": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 90
+    },
+    "facing=south,part=2": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 180
+    },
+    "facing=south,part=3": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 180
+    },
+    "facing=south,part=4": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 180
+    },
+    "facing=south,part=5": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 180
+    },
+    "facing=west,part=2": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 270
+    },
+    "facing=west,part=3": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 270
+    },
+    "facing=west,part=4": {
+      "model": "rpsports:block/treadmill_0",
+      "y": 270
+    },
+    "facing=west,part=5": {
+      "model": "rpsports:block/treadmill_0",
       "y": 270
     }
   }

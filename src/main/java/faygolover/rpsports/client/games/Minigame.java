@@ -25,6 +25,8 @@ public abstract class Minigame {
     protected final SportsNet.Open params;
     protected final RandomSource random = RandomSource.create();
     protected boolean tremble;
+    /** Сила дрожи 0…1 от сервера: появляется, как устал, растёт до 1, когда выжат совсем. */
+    private float trembleLevel;
     /** Удачных повторов в подходе (своих; сервер присылает свои — берём большее), серия удачных подряд, лучшая серия. */
     protected int reps, series, bestSeries;
     /** Объём подхода — повторы × вес (штанга, гантели). */
@@ -59,8 +61,9 @@ public abstract class Minigame {
         return 1f + 0.04f * (params.fitness() - 3);
     }
 
-    public void setTremble(boolean t) {
-        tremble = t;
+    public void setTremble(float level) {
+        trembleLevel = Math.max(0, Math.min(1, level));
+        tremble = trembleLevel > 0.01f;
     }
 
     public void setReps(int r) {
@@ -72,7 +75,7 @@ public abstract class Minigame {
         time += dt;
         if (flash > 0) flash = Math.max(0, flash - dt);
         else if (flash < 0) flash = Math.min(0, flash + dt);
-        trembleAmp = approach(trembleAmp, tremble ? 1 : 0, dt, 4);
+        trembleAmp = approach(trembleAmp, trembleLevel, dt, 2);
         pressed.replaceAll((k, v) -> Math.max(0, v - dt));
         update(dt);
     }
@@ -150,17 +153,15 @@ public abstract class Minigame {
     /** Нарисовать содержимое; вернуть его высоту (строка статистики — ниже). */
     protected abstract int draw(GuiGraphics g, Font font, int x, int y);
 
-    /** Значение подхода для рекорда: штанга и гантели — объём, груша — лучшая серия, остальное — повторы. */
+    /** Значение подхода для рекорда — лучшая серия. */
     protected float setValue() {
-        return exercise().weighted() ? volume : exercise() == Exercise.BAG ? bestSeries : reps;
+        return bestSeries;
     }
 
     private void stats(GuiGraphics g, Font font, float cx, float y) {
         float rec = Math.max(params.record(), setValue());
         boolean beaten = setValue() > params.record() && params.record() > 0;
-        Component line = exercise().weighted()
-                ? Component.translatable("rpsports.ui.stats_weight", reps, PlateItem.format(volume), series, PlateItem.format(rec))
-                : Component.translatable("rpsports.ui.stats", reps, series, PlateItem.format(rec));
+        Component line = Component.translatable("rpsports.ui.stats", reps, series, PlateItem.format(rec));
         Qte.small(g, font, line, cx, y, beaten ? Qte.GOLD_ZONE : Qte.WHITE_DIM);
     }
 

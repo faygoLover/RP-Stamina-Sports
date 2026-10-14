@@ -41,7 +41,17 @@ public final class ExerciseAnimations {
         Lib.set(p, m.exercise(), m.a(), m.b(), left);
     }
 
+    /** Подъём штанги у игрока на скамье (0…1), −1 — не жмёт или поз нет. */
+    public static float benchLift(AbstractClientPlayer p) {
+        return enabled ? Lib.benchLift(p) : -1;
+    }
+
     private static final class Lib {
+        static float benchLift(AbstractClientPlayer p) {
+            var data = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(p).get(LAYER);
+            return data instanceof ExerciseAnimation anim ? anim.benchLift() : -1;
+        }
+
         static void register() {
             dev.kosmx.playerAnim.minecraftApi.PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(LAYER, 1000,
                     ExerciseAnimation::new);

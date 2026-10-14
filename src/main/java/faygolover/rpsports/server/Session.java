@@ -38,6 +38,8 @@ final class Session {
     /** Серия удачных подряд, лучшая серия и объём подхода (повторы × вес) — для рекордов. */
     int series, bestSeries;
     double volume;
+    /** Выносливость повтора, которую ещё не списали: тратится плавно за ~секунду, а не рывком. */
+    double pendingStamina;
     /** Точка, где игрок стоит всё упражнение (null — может ходить: гантели; или сидит на сиденье: скамья). */
     @Nullable net.minecraft.world.phys.Vec3 anchor;
     float yaw;

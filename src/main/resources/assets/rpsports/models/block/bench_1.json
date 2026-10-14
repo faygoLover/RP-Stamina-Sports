@@ -4,7 +4,6 @@
   "textures": {
     "frame": "minecraft:block/iron_block",
     "pad": "minecraft:block/black_wool",
-    "bar": "minecraft:block/gray_concrete",
     "particle": "minecraft:block/iron_block"
   },
   "elements": [
