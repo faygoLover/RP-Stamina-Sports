@@ -60,6 +60,8 @@ final class SportEmotes {
         int t = (int) Math.floor(tick);
         float frac = tick - t;
         KeyframeAnimationPlayer p = FRAMES.computeIfAbsent(id + "@" + t, k -> new KeyframeAnimationPlayer(anim, t));
+        // Дробную часть кадра библиотека берёт из setupAnim, а не из параметра get3DTransform (без этого — ступеньки).
+        p.setupAnim(frac);
         return p.get3DTransform(part, type, frac, def);
     }
 

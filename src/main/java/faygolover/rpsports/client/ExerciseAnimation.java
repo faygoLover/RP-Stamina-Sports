@@ -34,6 +34,8 @@ public final class ExerciseAnimation implements IAnimation {
     private float shownA, shownB, runPhase;
     /** Тики эмоций, которые идут по времени: бег (со скоростью темпа), боевая стойка. */
     private float runTick, stanceTick;
+    /** Темп дорожки, сглаженный сильнее (выбор шага / лёгкого бега / бега). */
+    private float shownTempo;
     private long lastNanos;
 
     ExerciseAnimation(AbstractClientPlayer player) {
@@ -63,10 +65,16 @@ public final class ExerciseAnimation implements IAnimation {
         float dt = lastNanos == 0 ? 0 : Math.min(0.1f, (now - lastNanos) / 1e9f);
         lastNanos = now;
         float k = 1 - (float) Math.exp(-14 * dt);
-        shownA += (a - shownA) * k;
+        // Шкальные упражнения — сильно плавнее (кадр эмоции идёт за шкалой мягко, без рывков от нажатий).
+        boolean soft = exercise == Exercise.BENCH.ordinal() || exercise == Exercise.PULLUP.ordinal()
+                || exercise == Exercise.SQUAT.ordinal() || exercise == Exercise.DUMBBELL.ordinal() || exercise == Exercise.PUSHUP.ordinal();
+        float kA = soft ? 1 - (float) Math.exp(-6 * dt) : k;
+        shownA += (a - shownA) * kA;
+        shownTempo += (a - shownTempo) * (1 - (float) Math.exp(-2.5f * dt));
         // У груши b — какой удар (не плавно), у остальных — плавно.
         shownB = exercise == Exercise.BAG.ordinal() || exercise == Exercise.DUMBBELL.ordinal() ? b : shownB + (b - shownB) * k;
-        if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (7f + 13f * shownA);
+        // Фаза шага: шаг ~1,4 шага в секунду, лёгкий бег быстрее (бег из эмоции — своим счётчиком runTick).
+        if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (5.5f + 8f * shownTempo);
         runTick += dt * 20 * (0.5f + 1.5f * shownA);
         stanceTick += dt * 20;
         // Тело смотрит туда же, куда игрок поставлен (иначе оно «доворачивается» за головой).
@@ -151,7 +159,11 @@ public final class ExerciseAnimation implements IAnimation {
             }
             case PUSHUP -> {
                 if (SportEmotes.get("pushup") == null) return null;
-                return SportEmotes.sample("pushup", 4 + A * 5.5f, part, type, v);
+                Vec3f r = SportEmotes.sample("pushup", 4 + A * 5.5f, part, type, v);
+                // Глубже, чем в эмоции: внизу тело ниже, руки согнуты сильнее.
+                if (part.equals("body") && type == TransformType.POSITION) return new Vec3f(r.getX(), r.getY() - 0.12f * A, r.getZ());
+                if (part.endsWith("Arm") && type == TransformType.BEND) return new Vec3f(r.getX(), r.getY() * (1 + 0.45f * A), r.getZ());
+                return r;
             }
             case SQUAT -> {
                 if (SportEmotes.get("squat") == null) return null;
@@ -169,15 +181,23 @@ public final class ExerciseAnimation implements IAnimation {
                     float leftA = Math.max(0, Math.min(1, shownB - 2));
                     if (part.equals("rightArm")) return SportEmotes.sample("dumbbell", 10 + A * 19, part, type, v);
                     if (part.equals("leftArm")) return SportEmotes.sampleMirrored("dumbbell", 10 + leftA * 19, part, type, v);
-                    Vec3f r = SportEmotes.sample("dumbbell", 10, part, type, v);
-                    return part.equals("body") && type == TransformType.ROTATION ? new Vec3f(r.getX(), 0, 0) : r;
+                    // Остальное тело — ровно, как стоит (эмоция одной руки клонит корпус и голову).
+                    return v;
                 }
                 return leftHand ? SportEmotes.sampleMirrored("dumbbell", 10 + A * 19, part, type, v)
                         : SportEmotes.sample("dumbbell", 10 + A * 19, part, type, v);
             }
             case TREADMILL -> {
                 if (SportEmotes.get("run") == null) return null;
-                return SportEmotes.sample("run", 5 + (runTick % 23), part, type, v);
+                // Темп: первая треть — шаг, вторая — лёгкий бег, последняя — бег из эмоции; переходы плавные.
+                float t = shownTempo;
+                float wRun = smooth((t - 0.62f) / 0.1f), wJog = smooth((t - 0.28f) / 0.1f) - wRun, wWalk = 1 - wJog - wRun;
+                Vec3f run = wRun > 0.001f ? SportEmotes.sample("run", 5 + (runTick % 23), part, type, v) : v;
+                Vec3f walk = wWalk > 0.001f ? Gait.walk(part, type, v, runPhase) : v;
+                Vec3f jog = wJog > 0.001f ? Gait.jog(part, type, v, runPhase) : v;
+                return new Vec3f(walk.getX() * wWalk + jog.getX() * wJog + run.getX() * wRun,
+                        walk.getY() * wWalk + jog.getY() * wJog + run.getY() * wRun,
+                        walk.getZ() * wWalk + jog.getZ() * wJog + run.getZ() * wRun);
             }
             case BAG -> {
                 if (SportEmotes.get("stance") == null) return null;
@@ -186,10 +206,21 @@ public final class ExerciseAnimation implements IAnimation {
                 boolean right = lane >= 2, hook = lane == 0 || lane == 3;
                 if (A > 0.01f && SportEmotes.get("karate") != null) {
                     float u = 1 - A; // удар: 0 — только начался, 1 — рука вернулась
+                    // Рука вперёд сильнее всего в середине удара.
+                    float reach = (float) Math.sin(Math.min(1, u * 1.6f) * Math.PI);
                     String arm = right ? "rightArm" : "leftArm";
-                    if (part.equals(arm)) return SportEmotes.sample("karate", right ? 8 + u * 12 : 15 + u * 15, part, type, v);
-                    if (hook && part.equals("body") && type == TransformType.ROTATION)
-                        return new Vec3f(base.getX(), base.getY() + (right ? 0.35f : -0.35f) * A, base.getZ());
+                    if (part.equals(arm)) {
+                        Vec3f r = SportEmotes.sample("karate", right ? 8 + u * 12 : 15 + u * 15, part, type, v);
+                        // Дотянуться до груши: плечо вперёд, рука чуть внутрь.
+                        if (type == TransformType.POSITION) return new Vec3f(r.getX(), r.getY(), r.getZ() - 3f * reach);
+                        if (type == TransformType.ROTATION) return new Vec3f(r.getX(), r.getY() + (right ? -0.25f : 0.15f) * reach, r.getZ());
+                        return r;
+                    }
+                    if (part.equals("body") && type == TransformType.ROTATION) {
+                        // Доворот корпуса к груше: правая рука — правым плечом вперёд (груша по центру, рука сбоку).
+                        float twist = right ? (hook ? 0.6f : 0.45f) : (hook ? -0.5f : -0.2f);
+                        return new Vec3f(base.getX(), base.getY() + twist * reach, base.getZ());
+                    }
                 }
                 return base;
             }
@@ -197,6 +228,11 @@ public final class ExerciseAnimation implements IAnimation {
                 return null;
             }
         }
+    }
+
+    private static float smooth(float x) {
+        x = Math.max(0, Math.min(1, x));
+        return x * x * (3 - 2 * x);
     }
 
     /** Турник: сдвиг тела вверх, чтобы кисти в висе (тик 59) были на нашей перекладине. */
