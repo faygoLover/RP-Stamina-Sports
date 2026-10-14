@@ -64,7 +64,7 @@ public final class ExerciseAnimation implements IAnimation {
         shownA += (a - shownA) * k;
         // У груши b — какой удар (не плавно), у остальных — плавно.
         shownB = exercise == Exercise.BAG.ordinal() || exercise == Exercise.DUMBBELL.ordinal() ? b : shownB + (b - shownB) * k;
-        if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (4.5f + 8.5f * shownA);
+        if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (7f + 13f * shownA);
         // Тело смотрит туда же, куда игрок поставлен (иначе оно «доворачивается» за головой).
         if (exercise >= 0 && exercise != Exercise.DUMBBELL.ordinal()) {
             player.yBodyRot = player.yBodyRotO = player.getYRot();
@@ -141,7 +141,8 @@ public final class ExerciseAnimation implements IAnimation {
                 boolean right = part.equals("rightArm");
                 return pos ? v : v3(-PI / 2 + benchTilt(A), right ? BENCH_SPREAD : -BENCH_SPREAD, 0);
             }
-            case "rightLeg", "leftLeg" -> { return pos ? v : v3(1.1f, 0, part.equals("rightLeg") ? 0.12f : -0.12f); }
+            // Ноги — вдоль подушки (свисать вниз нельзя: прошли бы сквозь скамью).
+            case "rightLeg", "leftLeg" -> { return pos ? v : v3(0, 0, part.equals("rightLeg") ? 0.06f : -0.06f); }
             default -> { return v; }
         }
     }

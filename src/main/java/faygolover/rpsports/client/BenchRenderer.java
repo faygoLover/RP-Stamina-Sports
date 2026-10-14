@@ -56,7 +56,7 @@ public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
         pose.translate(0.5, 0, 0.5);
         pose.mulPose(Axis.YP.rotationDegrees(-angle(facing)));
         pose.translate(-0.5, 0, -0.5);
-        float r = 0.6f / 16;
+        float r = 0.5f / 16;
         box(pose, vc, bar, barX - r, barY - r, BAR_FROM, barX + r, barY + r, BAR_TO, light, overlay);
         for (int side = 0; side < 2; side++) {
             float z = side == 0 ? INNER_L : INNER_R;
@@ -70,8 +70,8 @@ public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
                 z = side == 0 ? z0 : z1;
             }
             // Замок за блинами.
-            float zc0 = side == 0 ? z - 0.8f / 16 : z, zc1 = side == 0 ? z : z + 0.8f / 16;
-            box(pose, vc, bar, barX - 1.2f / 16, barY - 1.2f / 16, zc0, barX + 1.2f / 16, barY + 1.2f / 16, zc1, light, overlay);
+            float zc0 = side == 0 ? z - 1f / 16 : z, zc1 = side == 0 ? z : z + 1f / 16;
+            box(pose, vc, bar, barX - 1f / 16, barY - 1f / 16, zc0, barX + 1f / 16, barY + 1f / 16, zc1, light, overlay);
         }
         pose.popPose();
     }
@@ -79,12 +79,12 @@ public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
     /** Высота бёдер лежащего (сервер ставит так, что спина — на подушке, 8/16). */
     static final float BENCH_PIVOT_Y = 0.617f;
 
-    /** Радиус и толщина блина, пиксели. */
+    /** Радиус и толщина блина, целые пиксели. */
     private static float[] plateSize(double kg) {
-        if (kg >= 20) return new float[]{6.5f, 1.6f};
-        if (kg >= 10) return new float[]{5.5f, 1.3f};
-        if (kg >= 5) return new float[]{4.5f, 1.0f};
-        return new float[]{3.5f, 0.8f};
+        if (kg >= 20) return new float[]{6, 2};
+        if (kg >= 10) return new float[]{5, 2};
+        if (kg >= 5) return new float[]{4, 1};
+        return new float[]{3, 1};
     }
 
     private static float angle(Direction facing) {
@@ -115,18 +115,20 @@ public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
                             float x1, float y1, float z1, int light, int overlay) {
         Matrix4f m = pose.last().pose();
         Matrix3f n = pose.last().normal();
-        float u0 = s.getU0(), u1 = s.getU1(), v0 = s.getV0(), v1 = s.getV1();
-        // Низ, верх, север, юг, запад, восток.
-        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, -1, 0, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1);
-        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, 1, 0, x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0);
-        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, 0, -1, x1, y1, z0, x1, y0, z0, x0, y0, z0, x0, y1, z0);
-        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 0, 0, 1, x0, y1, z1, x0, y0, z1, x1, y0, z1, x1, y1, z1);
-        quad(vc, m, n, light, overlay, u0, v0, u1, v1, -1, 0, 0, x0, y1, z0, x0, y0, z0, x0, y0, z1, x0, y1, z1);
-        quad(vc, m, n, light, overlay, u0, v0, u1, v1, 1, 0, 0, x1, y1, z1, x1, y0, z1, x1, y0, z0, x1, y1, z0);
+        float dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
+        // Низ, верх, север, юг, запад, восток; UV — по размеру грани (1 блок = вся текстура, не больше).
+        quad(vc, m, n, light, overlay, s, dx, dz, 0, -1, 0, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1);
+        quad(vc, m, n, light, overlay, s, dx, dz, 0, 1, 0, x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0);
+        quad(vc, m, n, light, overlay, s, dx, dy, 0, 0, -1, x1, y1, z0, x1, y0, z0, x0, y0, z0, x0, y1, z0);
+        quad(vc, m, n, light, overlay, s, dx, dy, 0, 0, 1, x0, y1, z1, x0, y0, z1, x1, y0, z1, x1, y1, z1);
+        quad(vc, m, n, light, overlay, s, dz, dy, -1, 0, 0, x0, y1, z0, x0, y0, z0, x0, y0, z1, x0, y1, z1);
+        quad(vc, m, n, light, overlay, s, dz, dy, 1, 0, 0, x1, y1, z1, x1, y0, z1, x1, y0, z0, x1, y1, z0);
     }
 
-    private static void quad(VertexConsumer vc, Matrix4f m, Matrix3f n, int light, int overlay, float u0, float v0, float u1, float v1,
-                             float nx, float ny, float nz, float... p) {
+    private static void quad(VertexConsumer vc, Matrix4f m, Matrix3f n, int light, int overlay, TextureAtlasSprite s,
+                             float w, float h, float nx, float ny, float nz, float... p) {
+        float u0 = s.getU0(), v0 = s.getV0();
+        float u1 = s.getU(Math.min(16, w * 16)), v1 = s.getV(Math.min(16, h * 16));
         float[][] uv = {{u0, v0}, {u0, v1}, {u1, v1}, {u1, v0}};
         for (int i = 0; i < 4; i++) {
             vc.vertex(m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).color(1f, 1f, 1f, 1f).uv(uv[i][0], uv[i][1])

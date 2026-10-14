@@ -6,30 +6,6 @@
     "facing=north,part=1": {
       "model": "rpsports:block/bench_1"
     },
-    "facing=east,part=0": {
-      "model": "rpsports:block/bench_0",
-      "y": 90
-    },
-    "facing=east,part=1": {
-      "model": "rpsports:block/bench_1",
-      "y": 90
-    },
-    "facing=south,part=0": {
-      "model": "rpsports:block/bench_0",
-      "y": 180
-    },
-    "facing=south,part=1": {
-      "model": "rpsports:block/bench_1",
-      "y": 180
-    },
-    "facing=west,part=0": {
-      "model": "rpsports:block/bench_0",
-      "y": 270
-    },
-    "facing=west,part=1": {
-      "model": "rpsports:block/bench_1",
-      "y": 270
-    },
     "facing=north,part=2": {
       "model": "rpsports:block/bench_0"
     },
@@ -41,6 +17,14 @@
     },
     "facing=north,part=5": {
       "model": "rpsports:block/bench_0"
+    },
+    "facing=east,part=0": {
+      "model": "rpsports:block/bench_0",
+      "y": 90
+    },
+    "facing=east,part=1": {
+      "model": "rpsports:block/bench_1",
+      "y": 90
     },
     "facing=east,part=2": {
       "model": "rpsports:block/bench_0",
@@ -58,6 +42,14 @@
       "model": "rpsports:block/bench_0",
       "y": 90
     },
+    "facing=south,part=0": {
+      "model": "rpsports:block/bench_0",
+      "y": 180
+    },
+    "facing=south,part=1": {
+      "model": "rpsports:block/bench_1",
+      "y": 180
+    },
     "facing=south,part=2": {
       "model": "rpsports:block/bench_0",
       "y": 180
@@ -73,6 +65,14 @@
     "facing=south,part=5": {
       "model": "rpsports:block/bench_0",
       "y": 180
+    },
+    "facing=west,part=0": {
+      "model": "rpsports:block/bench_0",
+      "y": 270
+    },
+    "facing=west,part=1": {
+      "model": "rpsports:block/bench_1",
+      "y": 270
     },
     "facing=west,part=2": {
       "model": "rpsports:block/bench_0",

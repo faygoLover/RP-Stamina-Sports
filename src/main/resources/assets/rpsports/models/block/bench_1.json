@@ -20,22 +20,58 @@
       ],
       "faces": {
         "north": {
-          "texture": "#pad"
+          "texture": "#pad",
+          "uv": [
+            3,
+            8,
+            16,
+            10
+          ]
         },
         "south": {
-          "texture": "#pad"
+          "texture": "#pad",
+          "uv": [
+            0,
+            8,
+            13,
+            10
+          ]
         },
         "east": {
-          "texture": "#pad"
+          "texture": "#pad",
+          "uv": [
+            4,
+            8,
+            12,
+            10
+          ]
         },
         "west": {
-          "texture": "#pad"
+          "texture": "#pad",
+          "uv": [
+            4,
+            8,
+            12,
+            10
+          ]
         },
         "up": {
-          "texture": "#pad"
+          "texture": "#pad",
+          "uv": [
+            0,
+            4,
+            13,
+            12
+          ]
         },
         "down": {
-          "texture": "#pad"
+          "texture": "#pad",
+          "uv": [
+            0,
+            4,
+            13,
+            12
+          ]
         }
       }
     },
@@ -52,22 +88,58 @@
       ],
       "faces": {
         "north": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            5,
+            10,
+            7,
+            16
+          ]
         },
         "south": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            9,
+            10,
+            11,
+            16
+          ]
         },
         "east": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            6,
+            10,
+            10,
+            16
+          ]
         },
         "west": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            6,
+            10,
+            10,
+            16
+          ]
         },
         "up": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            9,
+            6,
+            11,
+            10
+          ]
         },
         "down": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            9,
+            6,
+            11,
+            10
+          ]
         }
       }
     }

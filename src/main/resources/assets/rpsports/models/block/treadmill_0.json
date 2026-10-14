@@ -15,34 +15,70 @@
       ],
       "to": [
         16,
-        2.5,
+        2,
         14
       ],
       "faces": {
         "north": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            0,
+            14,
+            16,
+            16
+          ]
         },
         "south": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            0,
+            14,
+            16,
+            16
+          ]
         },
         "east": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            2,
+            14,
+            14,
+            16
+          ]
         },
         "west": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            2,
+            14,
+            14,
+            16
+          ]
         },
         "up": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            0,
+            2,
+            16,
+            14
+          ]
         },
         "down": {
-          "texture": "#frame"
+          "texture": "#frame",
+          "uv": [
+            0,
+            2,
+            16,
+            14
+          ]
         }
       }
     },
     {
       "from": [
         0,
-        2.5,
+        2,
         3
       ],
       "to": [
@@ -52,22 +88,58 @@
       ],
       "faces": {
         "north": {
-          "texture": "#belt"
+          "texture": "#belt",
+          "uv": [
+            0,
+            13,
+            16,
+            14
+          ]
         },
         "south": {
-          "texture": "#belt"
+          "texture": "#belt",
+          "uv": [
+            0,
+            13,
+            16,
+            14
+          ]
         },
         "east": {
-          "texture": "#belt"
+          "texture": "#belt",
+          "uv": [
+            3,
+            13,
+            13,
+            14
+          ]
         },
         "west": {
-          "texture": "#belt"
+          "texture": "#belt",
+          "uv": [
+            3,
+            13,
+            13,
+            14
+          ]
         },
         "up": {
-          "texture": "#belt"
+          "texture": "#belt",
+          "uv": [
+            0,
+            3,
+            16,
+            13
+          ]
         },
         "down": {
-          "texture": "#belt"
+          "texture": "#belt",
+          "uv": [
+            0,
+            3,
+            16,
+            13
+          ]
         }
       }
     }

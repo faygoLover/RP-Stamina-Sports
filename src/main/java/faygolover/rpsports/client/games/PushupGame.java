@@ -119,7 +119,7 @@ public class PushupGame extends Minigame {
         Qte.arc(g, cx, cy, r, 2, ARC_FROM, ARC_TO, Qte.GOLD_DIM);
         float z = zone();
         Qte.arc(g, cx, cy, r, 4.5f, onArc(-z), onArc(z), flashColor(Qte.GOLD));
-        Qte.dot(g, cx, cy, r, onArc(swing()), 4.5f, Qte.WHITE);
+        Qte.dot(g, cx, cy, r, onArc(swing()), 3f, Qte.WHITE);
         Qte.key(g, font, cx, cy, 9, "E", press(GLFW.GLFW_KEY_E), true);
         return 42;
     }
