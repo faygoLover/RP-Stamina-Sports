@@ -84,6 +84,8 @@ dependencies {
     implementation fg.deobf("blank:rpcore:${rpcore_version}")
     implementation fg.deobf("blank:rpstamina:${rpstamina_version}")
     implementation fg.deobf("blank:player-animation-lib-forge:${playeranim_version}")
+    // bendy-lib — сгибы локтей и коленей в эмоциях (в сборке есть; аддону не обязательна).
+    runtimeOnly fg.deobf("blank:bendy-lib-forge:${bendylib_version}")
     // Проверка вместе с семьёй: -Pwith_family=true (Perks + Culinary) или по одному: -Pwith_perks=true, -Pwith_culinary=true.
     def flag = { String name -> (project.findProperty(name) ?: 'false').toString().toBoolean() }
     boolean family = flag('with_family')
