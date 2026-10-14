@@ -38,6 +38,9 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+            // Миксины чужих модов (-Pwith_pack: Curios, Zero Contact и др.) в среде разработки.
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
             mods {
                 "${mod_id}" {
@@ -76,6 +79,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 // RP Core (обязательная зависимость семейства RP) — jar в libs/.
 repositories {
     flatDir { dir 'libs' }
+    // Связанные моды из сборки (python scripts/copy_pack.py) — только для запуска разработки, в git не попадают.
+    flatDir { dir 'libs/pack' }
 }
 
 dependencies {
@@ -94,6 +99,12 @@ dependencies {
     if (family || flag('with_culinary')) runtimeOnly fg.deobf("blank:rpculinary:${rpculinary_version}")
     if (family || flag('with_medicine')) runtimeOnly fg.deobf("blank:rpmedicine:${rpmedicine_version}")
     if (family || flag('with_pda')) runtimeOnly fg.deobf("blank:rppda:${rppda_version}")
+    // Связанные моды сборки (Curios, TaCZ, LSO, Patchouli, мебель госпиталя, Zone Artifacts…): -Pwith_pack=true.
+    if (flag('with_pack')) {
+        fileTree('libs/pack').matching { include '*-1.jar' }.each { f ->
+            runtimeOnly fg.deobf("blank:${f.name.replace('-1.jar', '')}:1")
+        }
+    }
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
