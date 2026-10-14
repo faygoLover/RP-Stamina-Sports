@@ -77,6 +77,7 @@ public final class ExerciseAnimation implements IAnimation {
         if (exercise == Exercise.TREADMILL.ordinal()) runPhase += dt * (5.5f + 8f * shownTempo);
         runTick += dt * 20 * (0.5f + 1.5f * shownA);
         stanceTick += dt * 20;
+        aimPunch();
         // Тело смотрит туда же, куда игрок поставлен (иначе оно «доворачивается» за головой).
         if (exercise >= 0 && exercise != Exercise.DUMBBELL.ordinal()) {
             player.yBodyRot = player.yBodyRotO = player.getYRot();
@@ -168,10 +169,14 @@ public final class ExerciseAnimation implements IAnimation {
             case SQUAT -> {
                 if (SportEmotes.get("squat") == null) return null;
                 Vec3f r = SportEmotes.sample("squat", A * 4, part, type, v);
+                // Сильно глубже эмоции: бедро почти горизонтально, колени согнуты сильнее, таз ниже, корпус вперёд.
                 if (part.equals("body") && type == TransformType.ROTATION) {
                     float sway = Math.max(-1, Math.min(1, shownB)) * 0.18f;
-                    return new Vec3f(r.getX(), r.getY(), r.getZ() + sway);
+                    return new Vec3f(r.getX() - 0.25f * A, r.getY(), r.getZ() + sway);
                 }
+                if (part.equals("body") && type == TransformType.POSITION) return new Vec3f(r.getX(), r.getY() - 0.24f * A, r.getZ());
+                if (part.endsWith("Leg") && type == TransformType.ROTATION) return new Vec3f(r.getX() - 0.6f * A, r.getY(), r.getZ());
+                if (part.endsWith("Leg") && type == TransformType.BEND) return new Vec3f(r.getX(), r.getY() + 0.55f * A, r.getZ());
                 return r;
             }
             case DUMBBELL -> {
@@ -205,28 +210,50 @@ public final class ExerciseAnimation implements IAnimation {
                 int lane = Math.round(shownB);
                 boolean right = lane >= 2, hook = lane == 0 || lane == 3;
                 if (A > 0.01f && SportEmotes.get("karate") != null) {
-                    float u = 1 - A; // удар: 0 — только начался, 1 — рука вернулась
-                    // Рука вперёд сильнее всего в середине удара.
-                    float reach = (float) Math.sin(Math.min(1, u * 1.6f) * Math.PI);
                     String arm = right ? "rightArm" : "leftArm";
                     if (part.equals(arm)) {
-                        Vec3f r = SportEmotes.sample("karate", right ? 8 + u * 12 : 15 + u * 15, part, type, v);
-                        // Дотянуться до груши: плечо вперёд, рука чуть внутрь.
-                        if (type == TransformType.POSITION) return new Vec3f(r.getX(), r.getY(), r.getZ() - 3f * reach);
-                        if (type == TransformType.ROTATION) return new Vec3f(r.getX(), r.getY() + (right ? -0.25f : 0.15f) * reach, r.getZ());
-                        return r;
+                        Vec3f r = punchArm(part, type, v, right);
+                        // Дотянуться до груши: рука вперёд на столько, сколько не хватает кулаку.
+                        return type == TransformType.POSITION ? new Vec3f(r.getX(), r.getY(), r.getZ() - bagReach) : r;
                     }
-                    if (part.equals("body") && type == TransformType.ROTATION) {
-                        // Доворот корпуса к груше: правая рука — правым плечом вперёд (груша по центру, рука сбоку).
-                        float twist = right ? (hook ? 0.6f : 0.45f) : (hook ? -0.5f : -0.2f);
-                        return new Vec3f(base.getX(), base.getY() + twist * reach, base.getZ());
-                    }
+                    if (part.equals("body") && type == TransformType.ROTATION)
+                        return new Vec3f(base.getX(), base.getY() + bagTwist + (hook ? (right ? 0.2f : -0.2f) * A : 0), base.getZ());
                 }
                 return base;
             }
             default -> {
                 return null;
             }
+        }
+    }
+
+    /** Доворот корпуса к груше и вынос руки вперёд (пиксели) — считаются раз за кадр по кулаку из эмоции. */
+    private float bagTwist, bagReach;
+
+    /** Рука удара из «Карате»: правая — кадры 8…20, левая — 15…30 (u: 0 — удар начался, 1 — рука вернулась). */
+    private Vec3f punchArm(String part, TransformType type, Vec3f v, boolean right) {
+        float u = 1 - Math.max(0, Math.min(1, shownA));
+        return SportEmotes.sample("karate", right ? 8 + u * 12 : 15 + u * 15, part, type, v);
+    }
+
+    /**
+     * Груша: где кулак ударной руки (система игрока: вперёд — −Z, вправо — +X) без доворота; повернуть корпус так,
+     * чтобы он шёл в центр груши (x = 0), и вынести руку, если до груши (передняя грань ≈ 0,75 вперёд) не хватает.
+     */
+    private void aimPunch() {
+        bagTwist = 0;
+        bagReach = 0;
+        if (exercise != Exercise.BAG.ordinal() || shownA <= 0.01f || SportEmotes.get("karate") == null || SportEmotes.get("stance") == null) return;
+        boolean right = Math.round(shownB) >= 2;
+        String arm = right ? "rightArm" : "leftArm";
+        SportEmotes.Pose pose = (p, t, d) -> p.equals(arm) ? punchArm(p, t, d, right)
+                : SportEmotes.sample("stance", 15 + (stanceTick % 32), p, t, d);
+        org.joml.Vector3f fist = SportEmotes.hand(pose, right, bendOn());
+        if (fist.z() < -0.05f) {
+            // Поворот вокруг вертикали: x' = x·cos θ + z·sin θ = 0.
+            bagTwist = Math.max(-1f, Math.min(1f, (float) Math.atan(-fist.x() / fist.z())));
+            float dist = (float) Math.sqrt(fist.x() * fist.x() + fist.z() * fist.z());
+            bagReach = Math.max(0, Math.min(5, (0.78f - dist) / PX));
         }
     }
 

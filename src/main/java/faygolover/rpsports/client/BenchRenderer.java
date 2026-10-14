@@ -25,7 +25,7 @@ import org.joml.Matrix4f;
  * на крюках стоек. Координаты — как у модели «на север» (голова у x = 0, ноги — к +x, гриф поперёк — вдоль z).
  */
 public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
-    private static final ResourceLocation BAR_TEX = new ResourceLocation("minecraft", "block/iron_block");
+    private static final ResourceLocation BAR_TEX = new ResourceLocation("minecraft", "block/light_gray_concrete");
     private static final ResourceLocation PLATE_TEX = new ResourceLocation("minecraft", "block/black_concrete");
     /** Плечи лежащего — на 12,5/16 от края блока со стойкой; крюки стоек — на 13,6/16 и высоте 17,6/16. */
     private static final float SHOULDER_X = 12.5f / 16, RACK_X = 13.6f / 16, RACK_Y = 17.6f / 16;
