@@ -446,7 +446,7 @@ public final class ExerciseAnimation implements IAnimation {
     }
 
     /** Пресс: бедро поднято от пола на этот угол (рад). */
-    private static final float SITUP_THIGH = 0.7f;
+    private static final float SITUP_THIGH = 0.58f;
     /**
      * Пресс: сгиб колена (рад), чтобы стопа встала на пол у таза. Бедро и голень — по 6 пикселей, таз на ~2 пикселя
      * над полом: колено на 6·sin(бедро) + 2, голень опускается до пола — сгиб = бедро + asin(высота колена / 6).
@@ -461,8 +461,8 @@ public final class ExerciseAnimation implements IAnimation {
     private static Vec3f situpBend(String part, Vec3f v) {
         return switch (part) {
             case "rightLeg", "leftLeg" -> v3(0, SITUP_KNEE, 0);
-            case "rightArm" -> v3(-1.15f, -1.56f, 0);
-            case "leftArm" -> v3(1.15f, -1.56f, 0);
+            case "rightArm" -> v3(1.15f, -1.56f, 0);
+            case "leftArm" -> v3(-1.15f, -1.56f, 0);
             default -> v;
         };
     }
