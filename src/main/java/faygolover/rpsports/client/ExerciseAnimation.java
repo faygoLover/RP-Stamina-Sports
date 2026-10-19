@@ -112,7 +112,7 @@ public final class ExerciseAnimation implements IAnimation {
         if (exercise < 0) return v;
         Vec3f e = emote(part, type, v);
         if (e != null) return e;
-        if (type == TransformType.BEND) return v;
+        if (type == TransformType.BEND) return exercise == Exercise.SITUP.ordinal() ? situpBend(part, v) : v;
         boolean pos = type == TransformType.POSITION;
         float A = Math.max(0, Math.min(1, shownA));
         return switch (Exercise.VALUES[exercise]) {
@@ -445,9 +445,22 @@ public final class ExerciseAnimation implements IAnimation {
         }
     }
 
+    /** Пресс: бедро поднято от пола на этот угол (рад). */
+    private static final float SITUP_THIGH = 0.7f;
     /**
-     * Пресс: на спине на полу, колени вверх, руки за головой. С каждой клавишей корпус поднимается (A), ноги остаются
-     * на месте (их угол возвращает подъём корпуса).
+     * Пресс: сгиб колена (рад), чтобы стопа встала на пол у таза. Бедро и голень — по 6 пикселей, таз на ~2 пикселя
+     * над полом: колено на 6·sin(бедро) + 2, голень опускается до пола — сгиб = бедро + asin(высота колена / 6).
+     */
+    private static final float SITUP_KNEE = SITUP_THIGH + (float) Math.asin(Math.min(1, (6 * Math.sin(SITUP_THIGH) + 2) / 6));
+
+    /** Пресс: согнутые колени (стопы на полу); остальное не гнётся. */
+    private static Vec3f situpBend(String part, Vec3f v) {
+        return part.endsWith("Leg") ? v3(0, SITUP_KNEE, 0) : v;
+    }
+
+    /**
+     * Пресс: на спине на полу, колени согнуты и подняты, стопы на полу, руки за головой. С каждой клавишей корпус
+     * поднимается (A), ноги остаются на месте (их угол возвращает подъём корпуса).
      */
     private Vec3f situp(String part, boolean pos, Vec3f v, float A) {
         float up = A * 1.15f;
@@ -460,7 +473,7 @@ public final class ExerciseAnimation implements IAnimation {
             }
             case "rightLeg", "leftLeg" -> {
                 boolean right = part.equals("rightLeg");
-                return pos ? v : v3(-(up + 0.55f), 0, right ? 0.06f : -0.06f);
+                return pos ? v : v3(-(up + SITUP_THIGH), 0, right ? 0.06f : -0.06f);
             }
             default -> { return v; }
         }
