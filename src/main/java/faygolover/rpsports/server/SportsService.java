@@ -505,8 +505,11 @@ public final class SportsService {
         Session s = SESSIONS.get(sp.getUUID());
         if (s != null) sessionTick(sp, s, d, now);
         else if (sp.getTags().contains(FORCE_STAMINA)) {
+            // Творческий после тренировки: тратить больше нечему (RP Stamina 1.4.2 пускает только траты тренировки),
+            // выносливость быстро набирается — за несколько секунд (находка 110).
             StaminaProvider st = RpCoreAPI.stamina();
             if (st == null || !sp.isCreative() || st.stamina(sp) >= st.maxStamina(sp) - 0.5f) sp.removeTag(FORCE_STAMINA);
+            else st.restore(sp, st.maxStamina(sp) * 0.2f, new ResourceLocation(RpSports.MODID, "rest"));
         }
         Muscles.recover(sp, d, 1, sp.isSleeping(), now);
         // Дожигание после тренировки.

@@ -79,9 +79,12 @@ public final class ExerciseAnimation implements IAnimation {
         stanceTick += dt * 20;
         aimPunch();
         // Тело смотрит туда же, куда игрок поставлен (иначе оно «доворачивается» за головой).
+        // Свой персонаж — по углу, на котором его поставил тренажёр (камера его не крутит, находка 112).
         if (exercise >= 0 && exercise != Exercise.DUMBBELL.ordinal()) {
-            player.yBodyRot = player.yBodyRotO = player.getYRot();
-            player.yHeadRot = player.yHeadRotO = player.getYRot();
+            Float locked = player == net.minecraft.client.Minecraft.getInstance().player ? CameraControl.lockedYaw() : null;
+            float yaw = locked != null ? locked : player.getYRot();
+            player.yBodyRot = player.yBodyRotO = yaw;
+            player.yHeadRot = player.yHeadRotO = yaw;
         }
     }
 
