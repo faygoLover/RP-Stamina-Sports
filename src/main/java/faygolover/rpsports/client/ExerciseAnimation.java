@@ -453,9 +453,18 @@ public final class ExerciseAnimation implements IAnimation {
      */
     private static final float SITUP_KNEE = SITUP_THIGH + (float) Math.asin(Math.min(1, (6 * Math.sin(SITUP_THIGH) + 2) / 6));
 
-    /** Пресс: согнутые колени (стопы на полу); остальное не гнётся. */
+    /**
+     * Пресс: согнутые колени (стопы на полу) и руки за головой — плечо вверх и в стороны, локоть согнут на ~90°
+     * внутрь, кисти у затылка. Сгиб руки: ось поворачивает плоскость сгиба к середине тела (у левой — зеркально),
+     * угол отрицательный, как у обычного сгиба локтя в эмоциях.
+     */
     private static Vec3f situpBend(String part, Vec3f v) {
-        return part.endsWith("Leg") ? v3(0, SITUP_KNEE, 0) : v;
+        return switch (part) {
+            case "rightLeg", "leftLeg" -> v3(0, SITUP_KNEE, 0);
+            case "rightArm" -> v3(-1.15f, -1.56f, 0);
+            case "leftArm" -> v3(1.15f, -1.56f, 0);
+            default -> v;
+        };
     }
 
     /**
@@ -469,7 +478,8 @@ public final class ExerciseAnimation implements IAnimation {
             case "head" -> { return pos ? v : v3(0.35f, 0, 0); }
             case "rightArm", "leftArm" -> {
                 boolean right = part.equals("rightArm");
-                return pos ? v : v3(-PI + 0.3f, 0, right ? -0.6f : 0.6f);
+                // Плечо вверх (вдоль тела к голове), чуть назад и в стороны — локти разведены.
+                return pos ? v : v3(-(PI + 0.25f), 0, right ? -0.37f : 0.37f);
             }
             case "rightLeg", "leftLeg" -> {
                 boolean right = part.equals("rightLeg");
