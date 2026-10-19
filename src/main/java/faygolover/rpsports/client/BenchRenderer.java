@@ -21,14 +21,13 @@ import org.joml.Matrix4f;
 
 /**
  * Штанга на скамье: гриф и блины (из окна блинов, по сторонам, от середины к краю). Пока на скамье лежит игрок, гриф
- * у него в руках — высота и сдвиг к груди считаются так же, как поза ({@link ExerciseAnimation#benchHands}); иначе —
- * на крюках стоек. Координаты — как у модели «на север» (голова у x = 0, ноги — к +x, гриф поперёк — вдоль z).
+ * у него в руках — по кистям из позы (эмоция жима); иначе — на крюках стоек. Координаты — как у модели «на север» (голова у x = 0, ноги — к +x, гриф поперёк — вдоль z).
  */
 public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
     private static final ResourceLocation BAR_TEX = new ResourceLocation("minecraft", "block/light_gray_concrete");
     private static final ResourceLocation PLATE_TEX = new ResourceLocation("minecraft", "block/black_concrete");
-    /** Плечи лежащего — на 12,5/16 от края блока со стойкой; крюки стоек — на 13,6/16 и высоте 17,6/16. */
-    private static final float SHOULDER_X = 12.5f / 16, RACK_X = 13.6f / 16, RACK_Y = 17.6f / 16;
+    /** Крюки стоек — на 13,6/16 от края блока со стойкой и высоте 17,6/16. */
+    private static final float RACK_X = 13.6f / 16, RACK_Y = 17.6f / 16;
     /** Гриф вдоль z: от −10/16 до 26/16; стойки — z 0…1 и 15…16, блины — снаружи. */
     private static final float BAR_FROM = -10 / 16f, BAR_TO = 26 / 16f, INNER_L = -0.5f / 16, INNER_R = 16.5f / 16;
 
@@ -57,11 +56,8 @@ public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
                         .rotate(new org.joml.Quaternionf().rotationY((float) Math.toRadians(angle(facing))));
                 barX = local.x() + 0.5f;
                 barY = local.y();
-            } else {
-                float[] h = ExerciseAnimation.benchHands(ExerciseAnimations.benchLift(lifter));
-                barX = SHOULDER_X + h[0];
-                barY = BENCH_PIVOT_Y + h[1];
             }
+            // Позы из эмоции нет (эмоции не загрузились) — гриф остаётся на стойке.
         }
         TextureAtlasSprite bar = sprite(BAR_TEX), plate = sprite(PLATE_TEX);
         VertexConsumer vc = buffers.getBuffer(RenderType.entitySolid(InventoryMenu.BLOCK_ATLAS));
@@ -88,9 +84,6 @@ public class BenchRenderer implements BlockEntityRenderer<BenchBlockEntity> {
         }
         pose.popPose();
     }
-
-    /** Высота бёдер лежащего (сервер ставит так, что спина — на подушке, 8/16). */
-    static final float BENCH_PIVOT_Y = 0.617f;
 
     /** Радиус и толщина блина, целые пиксели. */
     private static float[] plateSize(double kg) {
