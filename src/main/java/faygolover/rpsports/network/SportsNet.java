@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 public final class SportsNet {
     private SportsNet() {}
 
-    private static final String VERSION = "4";
+    private static final String VERSION = "3";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(RpSports.MODID, "main"),
             () -> VERSION, VERSION::equals, VERSION::equals);
 
@@ -129,10 +129,9 @@ public final class SportsNet {
     }
 
     /** Сервер → клиенты рядом: поза игрока; {@code exercise} −1 — упражнение кончилось. */
-    /** {@code yaw} — угол, на котором тренажёр поставил игрока: тело рисуется по нему, а не по повороту головы. */
-    public record Anim(int entityId, int exercise, float a, float b, float yaw) {
-        static void encode(Anim p, FriendlyByteBuf b) { b.writeVarInt(p.entityId); b.writeVarInt(p.exercise); b.writeFloat(p.a); b.writeFloat(p.b); b.writeFloat(p.yaw); }
-        static Anim decode(FriendlyByteBuf b) { return new Anim(b.readVarInt(), b.readVarInt(), b.readFloat(), b.readFloat(), b.readFloat()); }
+    public record Anim(int entityId, int exercise, float a, float b) {
+        static void encode(Anim p, FriendlyByteBuf b) { b.writeVarInt(p.entityId); b.writeVarInt(p.exercise); b.writeFloat(p.a); b.writeFloat(p.b); }
+        static Anim decode(FriendlyByteBuf b) { return new Anim(b.readVarInt(), b.readVarInt(), b.readFloat(), b.readFloat()); }
         static void handle(Anim p, Supplier<NetworkEvent.Context> c) { client(c, () -> faygolover.rpsports.client.ExerciseAnimations.remote(p)); }
     }
 

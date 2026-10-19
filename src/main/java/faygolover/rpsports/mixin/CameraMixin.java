@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
- * Камера на тренировке вращается вокруг персонажа мышью (без Better Third Person): подменяем углы первого
+ * Камера на тренировке вращается вокруг персонажа мышью ({@link CameraControl}): подменяем углы первого
  * {@code setRotation} в {@code Camera.setup}, дальше игра сама отодвигает камеру назад (и разворачивает для вида спереди).
  */
 @Mixin(Camera.class)

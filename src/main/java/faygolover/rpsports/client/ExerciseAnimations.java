@@ -26,7 +26,7 @@ public final class ExerciseAnimations {
 
     /** Своя поза (из мини-игры, каждый кадр). {@code exercise} −1 — упражнение кончилось. */
     public static void local(AbstractClientPlayer p, int exercise, float a, float b) {
-        if (enabled) Lib.set(p, exercise, a, b, ClientSession.leftHand(), Float.NaN);
+        if (enabled) Lib.set(p, exercise, a, b, ClientSession.leftHand());
     }
 
     /** Поза другого игрока (сервер пересылает ~10 раз в секунду). */
@@ -38,7 +38,7 @@ public final class ExerciseAnimations {
         if (!(e instanceof AbstractClientPlayer p) || p == mc.player) return;
         // У гантели b — рука (0 правая, 1 левая); 2 и больше — обе (2 + подъём левой).
         boolean left = m.exercise() == Exercise.DUMBBELL.ordinal() && m.b() >= 0.5f && m.b() < 2;
-        Lib.set(p, m.exercise(), m.a(), m.b(), left, m.yaw());
+        Lib.set(p, m.exercise(), m.a(), m.b(), left);
     }
 
     /** Подъём штанги у игрока на скамье (0…1), −1 — не жмёт или поз нет. */
@@ -68,11 +68,10 @@ public final class ExerciseAnimations {
                     ExerciseAnimation::new);
         }
 
-        static void set(AbstractClientPlayer p, int exercise, float a, float b, boolean leftHand, float yaw) {
+        static void set(AbstractClientPlayer p, int exercise, float a, float b, boolean leftHand) {
             var data = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(p).get(LAYER);
             if (data instanceof ExerciseAnimation anim) {
                 anim.leftHand = leftHand;
-                anim.yaw = yaw;
                 anim.set(exercise, a, b);
             }
         }
