@@ -231,7 +231,7 @@ public final class SportsService {
                 (float) d.record(e)));
         if (ratio > 1.4 && e.weighted())
             sp.displayClientMessage(Component.translatable("rpsports.msg.too_heavy").withStyle(ChatFormatting.GOLD), true);
-        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), e.ordinal(), 0, 0));
+        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), e.ordinal(), 0, 0, s.yaw));
     }
 
     /**
@@ -457,7 +457,7 @@ public final class SportsService {
         long now = sp.level().getGameTime();
         if (now - s.lastRelay < 2) return;
         s.lastRelay = now;
-        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), s.exercise.ordinal(), s.a, s.b));
+        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), s.exercise.ordinal(), s.a, s.b, (float) s.yaw));
     }
 
     // ------------------------------------------------------------------ конец
@@ -486,7 +486,7 @@ public final class SportsService {
             if (seat != null) seat.discard();
         }
         SportsNet.send(sp, new SportsNet.Stopped(reason == null ? "" : reason));
-        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), -1, 0, 0));
+        SportsNet.toTrackers(sp, new SportsNet.Anim(sp.getId(), -1, 0, 0, 0));
         if (reason != null && !reason.isEmpty())
             sp.displayClientMessage(Component.translatable(reason).withStyle(ChatFormatting.GRAY), true);
     }

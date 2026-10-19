@@ -69,12 +69,8 @@ public final class ClientSetup {
     }
 
     private static void onClientTick(TickEvent.ClientTickEvent e) {
+        if (e.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
-        // До тика игрока (он отправляет поворот на сервер): персонаж на тренажёре не поворачивается за камерой.
-        if (e.phase == TickEvent.Phase.START) {
-            if (mc.player != null) CameraControl.pin(mc.player);
-            return;
-        }
         ClientSession.tickHint();
         while (EXERCISES.consumeClick()) {
             if (mc.player != null && mc.screen == null) ExerciseSelector.toggle();

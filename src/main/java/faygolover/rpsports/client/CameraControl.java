@@ -17,7 +17,7 @@ public final class CameraControl {
 
     @Nullable private static CameraType saved;
     private static boolean orbit;
-    /** Персонаж стоит, как поставил тренажёр: поворот игрока держится на {@link #lockYaw}, камера — свободная. */
+    /** Идёт упражнение с камерой: тело персонажа рисуется по {@link #lockYaw}, куда бы ни смотрела камера. */
     private static boolean pinned;
     private static float orbitYaw, orbitPitch, lockYaw, lockPitch;
 
@@ -48,9 +48,9 @@ public final class CameraControl {
     }
 
     /**
-     * Угол, на котором стоит свой персонаж, пока идёт упражнение с камерой (иначе {@code null}). С Better Third Person
-     * камеру вращает он, но он же доворачивает игрока к камере (бег, ЛКМ/ПКМ) — тело при этом крутилось за камерой
-     * (находка 112). Поэтому поворот игрока держим сами.
+     * Угол, на котором тренажёр поставил своего персонажа, пока идёт упражнение с камерой (иначе {@code null}). С Better
+     * Third Person камеру вращает он и доворачивает к ней игрока (бег, ЛКМ/ПКМ) — тело рисуем по этому углу, а не по
+     * повороту игрока (находка 112). Сам поворот игрока не держим: иначе не крутится камера.
      */
     @Nullable
     public static Float lockedYaw() {
@@ -72,12 +72,9 @@ public final class CameraControl {
 
     /** Каждый кадр: движение мыши крутит камеру, а персонаж смотрит туда же, куда смотрел. */
     public static void frame() {
+        if (!orbiting()) return;
         LocalPlayer p = Minecraft.getInstance().player;
         if (p == null) return;
-        if (!orbiting()) {
-            pin(p);
-            return;
-        }
         float dy = p.getYRot() - lockYaw, dp = p.getXRot() - lockPitch;
         if (dy != 0 || dp != 0) {
             orbitYaw += dy;
@@ -87,14 +84,5 @@ public final class CameraControl {
             p.yRotO = lockYaw;
             p.xRotO = lockPitch;
         }
-    }
-
-    /** Без своего вращения камеры (Better Third Person): вернуть персонажа на место, наклон головы не трогаем. */
-    public static void pin(LocalPlayer p) {
-        if (orbiting() || !pinned || saved == null || p.getYRot() == lockYaw) return;
-        p.setYRot(lockYaw);
-        p.yRotO = lockYaw;
-        p.setYBodyRot(lockYaw);
-        p.yBodyRotO = lockYaw;
     }
 }

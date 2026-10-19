@@ -31,6 +31,8 @@ public final class ExerciseAnimation implements IAnimation {
     float a, b;
     /** Гантель в левой руке. */
     boolean leftHand;
+    /** Угол тренажёра у чужого игрока (с сервера); NaN — свой персонаж или угла нет. */
+    float yaw = Float.NaN;
     private float shownA, shownB, runPhase;
     /** Тики эмоций, которые идут по времени: бег (со скоростью темпа), боевая стойка. */
     private float runTick, stanceTick;
@@ -82,9 +84,9 @@ public final class ExerciseAnimation implements IAnimation {
         // Свой персонаж — по углу, на котором его поставил тренажёр (камера его не крутит, находка 112).
         if (exercise >= 0 && exercise != Exercise.DUMBBELL.ordinal()) {
             Float locked = player == net.minecraft.client.Minecraft.getInstance().player ? CameraControl.lockedYaw() : null;
-            float yaw = locked != null ? locked : player.getYRot();
-            player.yBodyRot = player.yBodyRotO = yaw;
-            player.yHeadRot = player.yHeadRotO = yaw;
+            float body = locked != null ? locked : !Float.isNaN(yaw) ? yaw : player.getYRot();
+            player.yBodyRot = player.yBodyRotO = body;
+            player.yHeadRot = player.yHeadRotO = body;
         }
     }
 
