@@ -84,6 +84,13 @@ public final class SportsService {
         return 0.6;
     }
 
+    /** Перегруз жима и гантелей (отношение выше 1): выносливость сверху за каждую попытку, ~квадрат перегруза (docs/10). */
+    static double overloadStamina(Exercise e, double ratio) {
+        if (!e.weighted() || ratio <= 1) return 0;
+        return Math.min(SportsConfig.get(SportsConfig.OVERLOAD_MAX), SportsConfig.get(SportsConfig.OVERLOAD_STAMINA)
+                * Math.pow(ratio - 1, SportsConfig.get(SportsConfig.OVERLOAD_EXP)));
+    }
+
     // ------------------------------------------------------------------ начало
 
     public static boolean benchBusy(Level level, BlockPos pos) {
@@ -370,7 +377,7 @@ public final class SportsService {
 
         // Выносливость: повтор (дорожка — по темпу, каждую секунду в тике).
         StaminaProvider stamina = RpCoreAPI.stamina();
-        double cost = cfg.stamina().get() * load * armor;
+        double cost = (cfg.stamina().get() * load + overloadStamina(s.exercise, ratio)) * armor;
         if (s.exercise == Exercise.BAG && RpCoreAPI.hasTrait(sp, RpIds.MELEE_FIGHTER)) cost *= 0.8;
         if (stamina != null && cost > 0) s.pendingStamina += cost;
 

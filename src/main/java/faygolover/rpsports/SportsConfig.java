@@ -24,6 +24,9 @@ public final class SportsConfig {
     public static final ForgeConfigSpec.IntValue MELEE_XP_MAX_LEVEL;
     public static final ForgeConfigSpec.DoubleValue BAR_BASE, BAR_PER_STRENGTH, DUMBBELL_BASE, DUMBBELL_PER_STRENGTH;
     public static final ForgeConfigSpec.DoubleValue TREAD_WALK, TREAD_RUN, TREAD_SPRINT;
+    public static final ForgeConfigSpec.DoubleValue BENCH_PRESS, BENCH_EXP_LIGHT, BENCH_EXP_HEAVY, BENCH_STRENGTH_EASE, BENCH_DRAIN,
+            BENCH_DRAIN_PER_REP, DB_ZONE, DB_ZONE_EXP, DB_ZONE_MIN, DB_ZONE_MAX, DB_NARROW, DB_NARROW_MAX,
+            OVERLOAD_STAMINA, OVERLOAD_EXP, OVERLOAD_MAX;
 
     public record ExerciseCfg(ForgeConfigSpec.DoubleValue xpStrength, ForgeConfigSpec.DoubleValue xpFitness,
                               ForgeConfigSpec.DoubleValue stamina, ForgeConfigSpec.DoubleValue fatigue) {}
@@ -82,6 +85,32 @@ public final class SportsConfig {
         BAR_PER_STRENGTH = B.defineInRange("bar_per_strength_kg", 9.5, 0.0, 1000.0);
         DUMBBELL_BASE = B.defineInRange("dumbbell_base_kg", 4.0, 0.0, 1000.0);
         DUMBBELL_PER_STRENGTH = B.defineInRange("dumbbell_per_strength_kg", 1.6, 0.0, 1000.0);
+        B.pop();
+
+        B.comment(" Силовые мини-игры (docs/10). Отношение = вес снаряда / свой вес. Читаются и клиентом (серверный конфиг приходит при входе)")
+                .push("strength_games");
+        BENCH_PRESS = B.comment(" Жим: доля подъёма за нажатие E при отношении 1 и Силе 3").defineInRange("bench_per_press", 0.081, 0.001, 1.0);
+        BENCH_EXP_LIGHT = B.comment(" Жим: степень отношения до 1 (лёгкий вес — меньше нажатий)").defineInRange("bench_exponent_light", 0.76, 0.0, 5.0);
+        BENCH_EXP_HEAVY = B.comment(" Жим: степень отношения выше 1 (перегруз; цену перегруза задаёт выносливость)")
+                .defineInRange("bench_exponent_heavy", 0.45, 0.0, 5.0);
+        BENCH_STRENGTH_EASE = B.comment(" Жим: за каждый уровень Силы от 3 — нажатие сильнее на столько").defineInRange("bench_strength_ease", 0.02, 0.0, 1.0);
+        BENCH_DRAIN = B.comment(" Жим: подъём утекает в секунду (на 4 с повтора нужно ~(0,25 + утечка) / доля нажатий в секунду)")
+                .defineInRange("bench_drain_per_second", 0.26, 0.0, 10.0);
+        BENCH_DRAIN_PER_REP = B.comment(" … и утечка растёт на столько за каждое поднятие").defineInRange("bench_drain_per_rep", 0.05, 0.0, 10.0);
+        DB_ZONE = B.comment(" Гантель: ширина зелёной зоны при отношении 1 и Силе 3 (кольцо наполняется за 1,33 с: 0,13 ≈ 173 мс)")
+                .defineInRange("dumbbell_zone", 0.13, 0.001, 1.0);
+        DB_ZONE_EXP = B.comment(" Гантель: степень отношения (зона = dumbbell_zone / отношение^степень)").defineInRange("dumbbell_zone_exponent", 2.35, 0.0, 10.0);
+        DB_ZONE_MIN = B.comment(" Гантель: самая узкая и самая широкая зона (0,012 ≈ 16 мс — кадр при 60 FPS)")
+                .defineInRange("dumbbell_zone_min", 0.012, 0.0, 1.0);
+        DB_ZONE_MAX = B.defineInRange("dumbbell_zone_max", 0.2, 0.0, 1.0);
+        DB_NARROW = B.comment(" Гантель: каждый удачный повтор сужает зону на такую долю, но не больше dumbbell_narrow_max")
+                .defineInRange("dumbbell_narrow_per_rep", 0.08, 0.0, 1.0);
+        DB_NARROW_MAX = B.defineInRange("dumbbell_narrow_max", 0.5, 0.0, 0.95);
+        OVERLOAD_STAMINA = B.comment(" Перегруз (отношение выше 1), жим и гантели: за каждую попытку, удачную или нет, сверху",
+                        " overload_stamina × (отношение − 1)^overload_exponent выносливости, не больше overload_stamina_max (×2 — ~420)")
+                .defineInRange("overload_stamina", 420.0, 0.0, 100000.0);
+        OVERLOAD_EXP = B.defineInRange("overload_exponent", 2.0, 0.0, 10.0);
+        OVERLOAD_MAX = B.defineInRange("overload_stamina_max", 1000.0, 0.0, 100000.0);
         B.pop();
 
         B.comment(" Упражнения: опыт за удачный повтор, трата выносливости, множитель усталости").push("exercises");

@@ -1,5 +1,6 @@
 package faygolover.rpsports.client.games;
 
+import faygolover.rpsports.SportsConfig;
 import faygolover.rpsports.item.PlateItem;
 import faygolover.rpsports.network.SportsNet;
 import net.minecraft.client.gui.Font;
@@ -20,13 +21,16 @@ public class BenchGame extends Minigame {
         super(p);
     }
 
+    /** Доля подъёма за нажатие (docs/10): Сила 3 — 50 кг ≈ 6 нажатий/с, пустой гриф ≈ 3; перегруз дорог выносливостью. */
     private float perPress() {
-        float r = Math.max(0.3f, params.ratio());
-        return 0.055f * strengthEase() / (float) Math.pow(r, 0.8) * (tremble ? 0.75f : 1f);
+        double r = Math.max(0.3, params.ratio());
+        double heavy = Math.pow(r, SportsConfig.get(r <= 1 ? SportsConfig.BENCH_EXP_LIGHT : SportsConfig.BENCH_EXP_HEAVY));
+        double ease = Math.max(0.2, 1 + SportsConfig.get(SportsConfig.BENCH_STRENGTH_EASE) * (params.strength() - 3));
+        return (float) (SportsConfig.get(SportsConfig.BENCH_PRESS) * ease / heavy) * (tremble ? 0.75f : 1f);
     }
 
     private float drain() {
-        return 0.26f * (1 + 0.05f * lifted);
+        return (float) (SportsConfig.get(SportsConfig.BENCH_DRAIN) * (1 + SportsConfig.get(SportsConfig.BENCH_DRAIN_PER_REP) * lifted));
     }
 
     @Override

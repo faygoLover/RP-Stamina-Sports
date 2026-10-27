@@ -1,5 +1,6 @@
 package faygolover.rpsports.client.games;
 
+import faygolover.rpsports.SportsConfig;
 import faygolover.rpsports.network.SportsNet;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -19,7 +20,7 @@ public class DumbbellGame extends Minigame {
         final int key, extra;
         final float ratio, kg, phase;
         float fill, down;
-        /** Насколько зона уже сузилась от удачных повторов. */
+        /** На какую долю зона уже сузилась от удачных повторов. */
         float narrowed;
         boolean holding;
 
@@ -31,10 +32,12 @@ public class DumbbellGame extends Minigame {
             this.phase = random.nextFloat() * 5;
         }
 
+        /** Ширина зоны (docs/10): от отношения в степени 2,35 — тяжёлую гантель правда трудно поймать (×2,3 — ~25 мс). */
         float zoneWidth() {
-            float r = Math.max(0.3f, ratio);
-            float w = 0.13f / (float) Math.pow(r, 1.2) * params.ease() * strengthEase() - narrowed;
-            return Math.max(0.05f, Math.min(0.2f, w));
+            double r = Math.max(0.3, ratio);
+            double w = SportsConfig.get(SportsConfig.DB_ZONE) / Math.pow(r, SportsConfig.get(SportsConfig.DB_ZONE_EXP))
+                    * params.ease() * strengthEase() * (1 - narrowed);
+            return (float) Math.max(SportsConfig.get(SportsConfig.DB_ZONE_MIN), Math.min(SportsConfig.get(SportsConfig.DB_ZONE_MAX), w));
         }
 
         void update(float dt) {
@@ -61,7 +64,7 @@ public class DumbbellGame extends Minigame {
                 holding = false;
                 boolean ok = fill >= ZONE_START && fill <= ZONE_START + zoneWidth();
                 rep(ok, extra, ok ? kg : 0);
-                if (ok) narrowed = Math.min(0.08f, narrowed + 0.012f);
+                if (ok) narrowed = (float) Math.min(SportsConfig.get(SportsConfig.DB_NARROW_MAX), narrowed + SportsConfig.get(SportsConfig.DB_NARROW));
                 down = DOWN_TIME;
             }
         }
