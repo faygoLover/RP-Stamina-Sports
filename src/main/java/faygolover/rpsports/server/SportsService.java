@@ -518,7 +518,8 @@ public final class SportsService {
             if (st == null || !sp.isCreative() || st.stamina(sp) >= st.maxStamina(sp) - 0.5f) sp.removeTag(FORCE_STAMINA);
             else st.restore(sp, st.maxStamina(sp) * 0.2f, new ResourceLocation(RpSports.MODID, "rest"));
         }
-        Muscles.recover(sp, d, 1, sp.isSleeping(), now);
+        // Время RP стоит (/time pause) — мышцы не отходят, как и раны.
+        if (RpCoreAPI.timeRunning()) Muscles.recover(sp, d, 1, sp.isSleeping(), now);
         // Дожигание после тренировки.
         NutritionProvider n = RpCoreAPI.nutrition();
         if (n != null && now < d.afterburnUntil) n.burnKcal(sp, SportsConfig.get(SportsConfig.AFTERBURN_KCAL));
