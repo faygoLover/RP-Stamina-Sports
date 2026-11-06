@@ -428,11 +428,16 @@ public final class SportsService {
         afterLoad(sp, s, d, now);
     }
 
+    /** Удачливый: черта без константы в Core 0.12. */
+    private static final net.minecraft.resources.ResourceLocation LUCKY = new net.minecraft.resources.ResourceLocation("rpcore", "lucky");
+
     /** После нагрузки: дрожь, плохое событие при нуле. */
     static void afterLoad(ServerPlayer sp, Session s, SportsData d, long now) {
         StaminaProvider stamina = RpCoreAPI.stamina();
         double frac = stamina == null ? 1 : stamina.stamina(sp) / Math.max(1f, stamina.maxStamina(sp));
-        double badAt = RpCoreAPI.hasTrait(sp, RpIds.UNLUCKY) ? SportsConfig.get(SportsConfig.UNLUCKY_STAMINA) : 0.005;
+        // Неудачливый срывается раньше, Удачливый (RP Perks 2.8.1) — только когда выжат до нуля.
+        double badAt = RpCoreAPI.hasTrait(sp, RpIds.UNLUCKY) ? SportsConfig.get(SportsConfig.UNLUCKY_STAMINA)
+                : RpCoreAPI.hasTrait(sp, LUCKY) ? 0.0 : 0.005;
         if (stamina != null && (stamina.exhausted(sp) || frac <= badAt)) {
             s.failed = true;
             BadEvents.trigger(sp, s, d);
