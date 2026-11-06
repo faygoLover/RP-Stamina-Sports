@@ -523,8 +523,10 @@ public final class SportsService {
             if (st == null || !sp.isCreative() || st.stamina(sp) >= st.maxStamina(sp) - 0.5f) sp.removeTag(FORCE_STAMINA);
             else st.restore(sp, st.maxStamina(sp) * 0.2f, new ResourceLocation(RpSports.MODID, "rest"));
         }
-        // Время RP стоит (/time pause) — мышцы не отходят, как и раны.
-        if (RpCoreAPI.timeRunning()) Muscles.recover(sp, d, 1, sp.isSleeping(), now);
+        // Мышцы отходят по времени тела (RP Core: 1:1 при 3-часовых сутках, медленнее при длинных и при /time speed < 1);
+        // время RP стоит (/time pause) — не отходят, как и раны.
+        double body = bodyTime();
+        if (body > 0) Muscles.recover(sp, d, body, sp.isSleeping(), now);
         // Дожигание после тренировки.
         NutritionProvider n = RpCoreAPI.nutrition();
         if (n != null && now < d.afterburnUntil) n.burnKcal(sp, SportsConfig.get(SportsConfig.AFTERBURN_KCAL));
@@ -598,5 +600,14 @@ public final class SportsService {
 
     static double benchKg(Level level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof BenchBlockEntity b ? b.totalKg() : BenchBlock.BAR_KG;
+    }
+
+    /** Секунда в сети во времени тела (нынешние числа — при 3-часовых сутках). Старый Core без bodyScale — по паузе. */
+    private static double bodyTime() {
+        try {
+            return RpCoreAPI.bodyScale() / 8.0;
+        } catch (NoSuchMethodError old) {
+            return RpCoreAPI.timeRunning() ? 1 : 0;
+        }
     }
 }
