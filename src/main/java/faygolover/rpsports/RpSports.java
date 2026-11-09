@@ -118,7 +118,8 @@ public class RpSports {
     private void onTimeSkip(RpTimeSkipEvent e) {
         if (!(e.getEntity() instanceof ServerPlayer sp)) return;
         SportsData d = SportsData.get(sp);
-        if (d != null) Muscles.recover(sp, d, e.seconds(), e.sleeping(), sp.level().getGameTime());
+        // Восстановление считается «как при 3-часовых сутках»; секунды события — по длине суток без /time speed.
+        if (d != null) Muscles.recover(sp, d, e.seconds() * 10800.0 / RpCoreAPI.dayLengthSeconds(), e.sleeping(), sp.level().getGameTime());
     }
 
     private void registerCommands(RegisterCommandsEvent e) {
