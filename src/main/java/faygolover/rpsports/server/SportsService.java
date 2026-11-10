@@ -170,6 +170,10 @@ public final class SportsService {
 
     private static void start(ServerPlayer sp, Exercise e, @Nullable BlockPos pos, InteractionHand hand, double kg, int program) {
         if (sp.isSpectator()) return;
+        if (!RpCoreAPI.handsFree(sp)) {
+            sp.displayClientMessage(Component.translatable("rpcore.msg.no_hands").withStyle(ChatFormatting.RED), true);
+            return;
+        }
         // С модом тела: перелом, сильная боль, нет руки — нельзя.
         BodyProvider body = RpCoreAPI.body();
         Double dualKg = e == Exercise.DUMBBELL ? DUAL_OFF_KG.get(sp.getUUID()) : null;

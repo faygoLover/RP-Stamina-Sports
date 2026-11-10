@@ -57,6 +57,7 @@ public class RpSports {
         bus.addGenericListener(Entity.class, this::attachCaps);
         bus.addListener(this::onPlayerTick);
         bus.addListener(this::onClone);
+        bus.addListener(net.minecraftforge.eventbus.api.EventPriority.NORMAL, false, faygolover.rpcore.api.event.RpCharacterWipeEvent.class, this::onWipe);
         bus.addListener(this::onLogout);
         bus.addListener(this::onDimension);
         bus.addListener(this::onStaminaSpent);
@@ -87,6 +88,12 @@ public class RpSports {
         if (e.phase != TickEvent.Phase.END || !(e.player instanceof ServerPlayer sp)) return;
         SportsService.tick(sp);
         if (sp.tickCount % 20 == 0) SportsService.secondTick(sp);
+    }
+
+    /** Вайп персонажа: мышцы и рекорды как у нового. */
+    private void onWipe(faygolover.rpcore.api.event.RpCharacterWipeEvent e) {
+        SportsData d = SportsData.get(e.getEntity());
+        if (d != null) d.copyFrom(new SportsData());
     }
 
     private void onClone(PlayerEvent.Clone e) {
