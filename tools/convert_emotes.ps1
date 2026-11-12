@@ -2,7 +2,7 @@
 # Нужен jar Emotecraft (только для перевода; аддону он не нужен). Путь — параметр или клиент DEPARTMENT_s5_client.
 #   powershell -File tools\convert_emotes.ps1 [-Emotecraft путь\emotecraft.jar]
 param(
-    [string]$Emotecraft = "$env:APPDATA\ElyPrismLauncher\instances\DEPARTMENT_s5_client\minecraft\mods\emotecraft-for-MC1.20.1-2.2.7-b.build.50-forge.jar"
+    [string]$Emotecraft = "D:\ElyPrismLauncher\instances\DEPARTMENT_s5_client\minecraft\mods\emotecraft-for-MC1.20.1-2.2.7-b.build.50-forge.jar"
 )
 $root = Split-Path $PSScriptRoot -Parent
 $pal = Get-ChildItem "$root\libs\player-animation-lib-forge-*.jar" | Select-Object -First 1

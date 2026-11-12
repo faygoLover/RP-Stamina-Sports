@@ -12,7 +12,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DST = os.path.join(HERE, "..", "libs", "pack")
-PACK = os.path.join(os.environ.get("APPDATA", ""), "ElyPrismLauncher", "instances", "DEPARTMENT_s5_client", "minecraft", "mods")
+PACK = os.path.join("D:\\", "ElyPrismLauncher", "instances", "DEPARTMENT_s5_client", "minecraft", "mods")
 ZONE = os.path.join(HERE, "..", "..", "faygolover's Zone Artifacts", "build", "libs")
 
 # Моды, с которыми связаны моды семьи (проверки isLoaded и совместимость), плюс мебель госпиталя Medicine.
