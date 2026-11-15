@@ -1,6 +1,6 @@
 # RP Stamina Sports — указатель кода
 
-Создано `python _family/tools/mapgen.py` 15.11.2026, версия 0.1.13-1.20.1-forge, коммит `e5d6bc8`.
+Создано `python _family/tools/mapgen.py` 15.11.2026, версия 0.1.13-1.20.1-forge, коммит `d758cad`.
 **Руками не править**: пересоздаётся скриптом. Смысл, потоки работы и рецепты — в `docs/MAP.md`.
 Разбор по шаблонам, без компиляции: необычно оформленная регистрация может отсутствовать в списках.
 
@@ -145,7 +145,6 @@
 
 ## 6. Данные
 
-- capability: `RpSports`
 - capability: `SportsData`, ключ `rpsports:muscles`
 - SavedData: `Records`, файл "rpsports_records"
 
