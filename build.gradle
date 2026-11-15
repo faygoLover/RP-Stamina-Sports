@@ -145,6 +145,8 @@ tasks.named('jar', Jar).configure {
                 'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
+    // Игровые тесты и их площадка в сборку для игроков не идут.
+    exclude 'faygolover/rpsports/gametest/**', 'data/rpsports/structures/**'
 
     finalizedBy 'reobfJar'
 }
