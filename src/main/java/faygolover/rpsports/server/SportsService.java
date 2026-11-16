@@ -606,12 +606,8 @@ public final class SportsService {
         return level.getBlockEntity(pos) instanceof BenchBlockEntity b ? b.totalKg() : BenchBlock.BAR_KG;
     }
 
-    /** Секунда в сети во времени тела (нынешние числа — при 3-часовых сутках). Старый Core без bodyScale — по паузе. */
+    /** Секунда в сети во времени тела (числа подобраны под эталон RP Core — 3-часовые сутки). */
     private static double bodyTime() {
-        try {
-            return RpCoreAPI.bodyScale() / 8.0;
-        } catch (NoSuchMethodError old) {
-            return RpCoreAPI.timeRunning() ? 1 : 0;
-        }
+        return RpCoreAPI.bodyRate();
     }
 }

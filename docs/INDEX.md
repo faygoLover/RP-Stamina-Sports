@@ -1,18 +1,18 @@
 # RP Stamina Sports — указатель кода
 
-Создано `python _family/tools/mapgen.py`, версия мода 0.1.13-1.20.1-forge.
+Создано `python _family/tools/mapgen.py`, версия мода 0.1.14-1.20.1-forge.
 **Руками не править**: пересоздаётся скриптом. Смысл, потоки работы и рецепты — в `docs/MAP.md`.
 Разбор по шаблонам, без компиляции: необычно оформленная регистрация может отсутствовать в списках.
 
-Всего: 46 файлов, 5572 строк Java.
+Всего: 46 файлов, 5535 строк Java.
 
 ## 1. Пакеты
 
 | Пакет | Файлов | Строк |
 |---|---:|---:|
-| `faygolover.rpsports` | 2 | 317 |
+| `faygolover.rpsports` | 2 | 288 |
 | `faygolover.rpsports.block` | 6 | 522 |
-| `faygolover.rpsports.capability` | 1 | 130 |
+| `faygolover.rpsports.capability` | 1 | 126 |
 | `faygolover.rpsports.client` | 11 | 1284 |
 | `faygolover.rpsports.client.games` | 10 | 1317 |
 | `faygolover.rpsports.core` | 2 | 111 |
@@ -23,12 +23,12 @@
 | `faygolover.rpsports.mixin` | 2 | 48 |
 | `faygolover.rpsports.network` | 1 | 152 |
 | `faygolover.rpsports.registry` | 1 | 143 |
-| `faygolover.rpsports.server` | 5 | 1097 |
+| `faygolover.rpsports.server` | 5 | 1093 |
 
 ## 2. Классы
 
 ### `faygolover.rpsports`
-- `RpSports`, 176 — RP Stamina — Sports addon: тренажёры и упражнения без снаряда с мини-играми, усталость мышц по зонам, рост Силы и Телосложения (дизайн — docs/00–09).
+- `RpSports`, 147 — RP Stamina — Sports addon: тренажёры и упражнения без снаряда с мини-играми, усталость мышц по зонам, рост Силы и Телосложения (дизайн — docs/00–09).
 - `SportsConfig`, 141 — Настройки сервера: /serverconfig/rpsports-server.toml.
 
 ### `faygolover.rpsports.block`
@@ -40,7 +40,7 @@
 - `Shapes2`, 37 — Поворот формы блока, заданной для «на север», к нужной стороне.
 
 ### `faygolover.rpsports.capability`
-- `SportsData`, 130 — Мышцы игрока (сервер): силы зон 0–100, стадии «Усталость» и «Боль в мышцах» (держатся до полного восстановления), перегрузка «сверх нуля», дожигание.
+- `SportsData`, 126 — Мышцы игрока (сервер): силы зон 0–100, стадии «Усталость» и «Боль в мышцах» (держатся до полного восстановления), перегрузка «сверх нуля», дожигание.
 
 ### `faygolover.rpsports.client`
 - `BenchRenderer`, 145 — Штанга на скамье: гриф и блины (из окна блинов, по сторонам, от середины к краю).
@@ -99,7 +99,7 @@
 - `Muscles`, 170 — Силы зон мышц: усталость, стадии, перегрузка, восстановление (docs/00 «Силы зоны»).
 - `Records`, 106 — Рекорды (docs/00 п.
 - `Session`, 73 — Идущее упражнение игрока (только сервер, не сохраняется).
-- `SportsService`, 618 — Тренировки на сервере (RP Stamina Sports docs/00): начать — ПКМ по тренажёру, ПКМ гантелью, клавиша «Упражнения»; закончить — Ctrl, отойти, слезть; повтор: выносливость (RP Stamina), усталость зон, опыт Силы и Телосложения за кажд…
+- `SportsService`, 614 — Тренировки на сервере (RP Stamina Sports docs/00): начать — ПКМ по тренажёру, ПКМ гантелью, клавиша «Упражнения»; закончить — Ctrl, отойти, слезть; повтор: выносливость (RP Stamina), усталость зон, опыт Силы и Телосложения за кажд…
 
 Классов без описания: 0 из 46.
 
@@ -107,17 +107,13 @@
 
 | Событие | Кто слушает |
 |---|---|
-| `AttachCapabilitiesEvent` | `RpSports.attachCaps` |
 | `ClientPlayerNetworkEvent.LoggingOut` | `ClientSetup.onLogout` |
 | `EntityRenderersEvent.RegisterRenderers` | `ClientSetup.renderers` |
 | `FMLClientSetupEvent` | `ClientSetup.setup` |
 | `FMLCommonSetupEvent` | `RpSports.commonSetup` |
 | `InputEvent.InteractionKeyMappingTriggered` | `ClientSetup.onInteraction` |
 | `InputEvent.MouseButton.Pre` | `ClientSetup.onMouse` |
-| `PlayerEvent.Clone` | `RpSports.onClone` |
 | `PlayerEvent.PlayerChangedDimensionEvent` | `RpSports.onDimension` |
-| `PlayerEvent.PlayerLoggedOutEvent` | `RpSports.onLogout` |
-| `RegisterCapabilitiesEvent` | `RpSports.registerCaps` |
 | `RegisterCommandsEvent` | `RpSports.registerCommands` |
 | `RegisterKeyMappingsEvent` | `ClientSetup.keys` |
 | `RenderGuiOverlayEvent.Post` | `ClientSetup.onOverlay` |
@@ -158,7 +154,7 @@
 
 ## 8. Что берёт из RP Core и что ему даёт
 
-Методы `RpCoreAPI` (сколько вызовов): `body` 6, `bodyScale` 1, `dayLengthSeconds` 1, `grantXp` 3, `handsFree` 1, `hasTrait` 8, `nutrition` 2, `registerCommand` 3, `registerModule` 1, `skill` 1, `stamina` 5, `timeRunning` 1, `weightKg` 1.
+Методы `RpCoreAPI` (сколько вызовов): `body` 6, `bodyRate` 1, `dayLengthSeconds` 1, `grantXp` 3, `handsFree` 1, `hasTrait` 8, `nutrition` 2, `registerCommand` 3, `registerModule` 1, `skill` 1, `stamina` 5, `weightKg` 1.
 
 События Core: `RpCharacterWipeEvent`, `RpTimeSkipEvent`.
 
@@ -166,7 +162,7 @@
 
 Проверки `isLoaded`: `playeranimator` (ExerciseAnimations).
 
-Пакеты других модов семейства в коде: `rpcore` — 7 файлов; `rpstamina` — 1 файлов.
+Пакеты других модов семейства в коде: `rpcore` — 8 файлов; `rpstamina` — 1 файлов.
 
 Миксины (2):
 - `CameraMixin` (client) → Camera.class

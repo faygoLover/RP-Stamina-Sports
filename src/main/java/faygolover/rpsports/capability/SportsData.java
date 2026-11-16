@@ -1,17 +1,14 @@
 package faygolover.rpsports.capability;
 
+import faygolover.rpcore.api.data.PlayerStore;
 import faygolover.rpsports.RpSports;
 import faygolover.rpsports.core.Zone;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilitySerializable;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -21,6 +18,25 @@ import org.jetbrains.annotations.Nullable;
 public final class SportsData {
     public static final Capability<SportsData> CAP = CapabilityManager.get(new CapabilityToken<>() {});
     public static final ResourceLocation ID = new ResourceLocation(RpSports.MODID, "muscles");
+    /** Общий жизненный цикл данных игрока (RP Core). Заполняется в {@link #register()}. */
+    public static PlayerStore<SportsData> STORE;
+
+    /**
+     * Описать данные для RP Core. Вызывается из конструктора мода. Имя ветки в сохранении — прежнее
+     * ({@code rpsports:muscles}). После смерти мышцы свежие, остаются только рекорды; при возврате из Края — всё.
+     * Клиенту не отправляется.
+     */
+    public static void register() {
+        STORE = PlayerStore.of(ID, SportsData.class, CAP, SportsData::new)
+                .save(SportsData::save)
+                .load(SportsData::load)
+                .clone((from, to, ctx) -> {
+                    if (ctx.wasDeath()) to.copyRecords(from);
+                    else to.copyFrom(from);
+                })
+                .forget(faygolover.rpsports.server.SportsService::forget)
+                .register();
+    }
 
     public final double[] strength = new double[Zone.VALUES.length];
     /** Скрытая усталость (ниже 30 %) — до полного восстановления. */
@@ -105,25 +121,5 @@ public final class SportsData {
     public void copyRecords(SportsData o) {
         records.clear();
         records.putAll(o.records);
-    }
-
-    public static final class Provider implements ICapabilitySerializable<CompoundTag> {
-        private final SportsData data = new SportsData();
-        private final LazyOptional<SportsData> opt = LazyOptional.of(() -> data);
-
-        @Override
-        public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-            return CAP.orEmpty(cap, opt);
-        }
-
-        @Override
-        public CompoundTag serializeNBT() {
-            return data.save();
-        }
-
-        @Override
-        public void deserializeNBT(CompoundTag nbt) {
-            data.load(nbt);
-        }
     }
 }

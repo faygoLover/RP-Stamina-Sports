@@ -22,8 +22,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -51,14 +49,11 @@ public class RpSports {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SportsConfig.SPEC);
         SportsRegistry.register(modBus);
         modBus.addListener(this::commonSetup);
-        modBus.addListener(this::registerCaps);
+        SportsData.register();
 
         var bus = MinecraftForge.EVENT_BUS;
-        bus.addGenericListener(Entity.class, this::attachCaps);
         bus.addListener(this::onPlayerTick);
-        bus.addListener(this::onClone);
         bus.addListener(net.minecraftforge.eventbus.api.EventPriority.NORMAL, false, faygolover.rpcore.api.event.RpCharacterWipeEvent.class, this::onWipe);
-        bus.addListener(this::onLogout);
         bus.addListener(this::onDimension);
         bus.addListener(this::onStaminaSpent);
         bus.addListener(this::onTimeSkip);
@@ -76,14 +71,6 @@ public class RpSports {
         });
     }
 
-    private void registerCaps(RegisterCapabilitiesEvent e) {
-        e.register(SportsData.class);
-    }
-
-    private void attachCaps(AttachCapabilitiesEvent<Entity> e) {
-        if (e.getObject() instanceof Player) e.addCapability(SportsData.ID, new SportsData.Provider());
-    }
-
     private void onPlayerTick(TickEvent.PlayerTickEvent e) {
         if (e.phase != TickEvent.Phase.END || !(e.player instanceof ServerPlayer sp)) return;
         SportsService.tick(sp);
@@ -94,22 +81,6 @@ public class RpSports {
     private void onWipe(faygolover.rpcore.api.event.RpCharacterWipeEvent e) {
         SportsData d = SportsData.get(e.getEntity());
         if (d != null) d.copyFrom(new SportsData());
-    }
-
-    private void onClone(PlayerEvent.Clone e) {
-        e.getOriginal().reviveCaps();
-        SportsData from = SportsData.get(e.getOriginal());
-        SportsData to = SportsData.get(e.getEntity());
-        e.getOriginal().invalidateCaps();
-        // После смерти мышцы свежие; при возвращении из Края — те же.
-        if (from != null && to != null) {
-            if (!e.isWasDeath()) to.copyFrom(from);
-            else to.copyRecords(from);
-        }
-    }
-
-    private void onLogout(PlayerEvent.PlayerLoggedOutEvent e) {
-        if (e.getEntity() instanceof ServerPlayer sp) SportsService.forget(sp);
     }
 
     private void onDimension(PlayerEvent.PlayerChangedDimensionEvent e) {
