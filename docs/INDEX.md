@@ -4,13 +4,13 @@
 **Руками не править**: пересоздаётся скриптом. Смысл, потоки работы и рецепты — в `docs/MAP.md`.
 Разбор по шаблонам, без компиляции: необычно оформленная регистрация может отсутствовать в списках.
 
-Всего: 46 файлов, 5535 строк Java.
+Всего: 46 файлов, 5538 строк Java.
 
 ## 1. Пакеты
 
 | Пакет | Файлов | Строк |
 |---|---:|---:|
-| `faygolover.rpsports` | 2 | 288 |
+| `faygolover.rpsports` | 2 | 291 |
 | `faygolover.rpsports.block` | 6 | 522 |
 | `faygolover.rpsports.capability` | 1 | 126 |
 | `faygolover.rpsports.client` | 11 | 1284 |
@@ -28,7 +28,7 @@
 ## 2. Классы
 
 ### `faygolover.rpsports`
-- `RpSports`, 147 — RP Stamina — Sports addon: тренажёры и упражнения без снаряда с мини-играми, усталость мышц по зонам, рост Силы и Телосложения (дизайн — docs/00–09).
+- `RpSports`, 150 — RP Stamina — Sports addon: тренажёры и упражнения без снаряда с мини-играми, усталость мышц по зонам, рост Силы и Телосложения (дизайн — docs/00–09).
 - `SportsConfig`, 141 — Настройки сервера: /serverconfig/rpsports-server.toml.
 
 ### `faygolover.rpsports.block`
@@ -154,7 +154,7 @@
 
 ## 8. Что берёт из RP Core и что ему даёт
 
-Методы `RpCoreAPI` (сколько вызовов): `body` 6, `bodyRate` 1, `dayLengthSeconds` 1, `grantXp` 3, `handsFree` 1, `hasTrait` 8, `nutrition` 2, `registerCommand` 3, `registerModule` 1, `skill` 1, `stamina` 5, `weightKg` 1.
+Методы `RpCoreAPI` (сколько вызовов): `body` 6, `bodyRate` 1, `dayLengthSeconds` 1, `grantXp` 3, `handsFree` 1, `hasTrait` 8, `nutrition` 2, `registerCommand` 3, `registerModule` 1, `reportCompat` 2, `skill` 1, `stamina` 5, `weightKg` 1.
 
 События Core: `RpCharacterWipeEvent`, `RpTimeSkipEvent`.
 

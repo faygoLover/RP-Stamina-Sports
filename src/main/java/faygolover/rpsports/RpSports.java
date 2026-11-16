@@ -65,6 +65,9 @@ public class RpSports {
         SportsNet.register();
         e.enqueueWork(() -> {
             RpCoreAPI.registerModule(MODID, "спорт: тренажёры, мини-игры, усталость мышц, рост Силы и Телосложения");
+            // Необязательные интеграции — в общий отчёт RP Core (/rpcore compat).
+            faygolover.rpcore.api.RpCoreAPI.reportCompat(MODID, "playeranimator");
+            faygolover.rpcore.api.RpCoreAPI.reportCompat(MODID, "emotecraft");
             RpCoreAPI.registerCommand(MODID, "/rpsports status [игрок]", "rpsports.help.status", 2, false);
             RpCoreAPI.registerCommand(MODID, "/rpsports rest [игрок]", "rpsports.help.rest", 2, false);
             RpCoreAPI.registerCommand(MODID, "/rpsports records [упражнение]", "rpsports.help.records", 0, false);
